@@ -3,7 +3,6 @@ import theme from "../theme";
 import type { AppProps } from "next/app";
 import "../styles/globals.css";
 import 'font-awesome/css/font-awesome.min.css';
-import App, { AppInitialProps } from 'next/app';
 
 
 function MyApp({ Component, pageProps }: AppProps) {
@@ -13,12 +12,5 @@ function MyApp({ Component, pageProps }: AppProps) {
     </ThemeProvider>
   );
 }
-
-MyApp.getInitialProps = async (appContext: any) => {
-  const appProps = await App.getInitialProps(appContext);
-
-  return { ...appProps };
-};
-
 
 export default MyApp;
