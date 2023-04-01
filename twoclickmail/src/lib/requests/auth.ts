@@ -1,5 +1,3 @@
-import Cookies from 'js-cookie';
-
 export async function loginUser(email: string, password: string): Promise<boolean> {
   try {
     const response = await fetch('http://127.0.0.1:5000/login', {

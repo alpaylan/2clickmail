@@ -1,7 +1,6 @@
 // pages/index.tsx
 
 import { useEffect } from 'react';
-import Cookies from 'js-cookie';
 import Layout from '../components/layout';
 import { GetServerSideProps } from 'next';
 
