@@ -12,11 +12,15 @@ import { useRouter } from 'next/router';
 import { generate } from "../lib/requests/data";
 import Layout from "@/components/layout";
 
+import * as EmailValidator from "email-validator";
+
+
 
 const Generate: React.FC = () => {
-  const [to, setTo] = useState([]);
-  const [cc, setCc] = useState([]);
-  const [bcc, setBcc] = useState([]);
+  const [to, setTo] = useState<string[]>([]);
+  const [toInput, setToInput] = useState<string>("");
+  const [cc, setCc] = useState<string[]>([]);
+  const [bcc, setBcc] = useState<string[]>([]);
   const [subject, setSubject] = useState("");
   const [body, setBody] = useState("");
   const router = useRouter();
@@ -47,7 +51,7 @@ const Generate: React.FC = () => {
         }
       );
     } else {
-      console.log("Error");
+      console.error("No unique id");
     }
 
 
@@ -76,13 +80,33 @@ const Generate: React.FC = () => {
               <Autocomplete
                 multiple
                 freeSolo
+                selectOnFocus
                 options={[]}
                 value={to}
-                onChange={(_, value) => { setTo(value as any) }}
+                onInputChange={(_, value) => {
+                  setToInput(value);
+                }}
+                inputValue={toInput}
+                onChange={(_, value) => { 
+                  if (value.length > 0) {
+                    const newValue = value[value.length - 1];
+                    if (EmailValidator.validate(newValue)) {
+                      setTo(value);
+                    } else {
+                      alert("Invalid email");
+                      setToInput(toInput);
+                    }
+                  } else {
+                    setTo(value) 
+                  }
+                }}
                 renderTags={(value, getTagProps) =>
                   value.map((option, index) => (
                     // eslint-disable-next-line react/jsx-key
-                    <Chip variant="outlined" label={option} {...getTagProps({ index })} />
+                    <Chip 
+                    clickable
+                    variant="outlined" 
+                    label={option} {...getTagProps({ index })} />
                   ))
                 }
                 renderInput={(params) => (
