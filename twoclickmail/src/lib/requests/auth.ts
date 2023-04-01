@@ -18,6 +18,7 @@ export async function loginUser(email: string, password: string): Promise<boolea
     if (response.status === 200) {
       console.log('Logged in successfully');
       console.error(response);
+      localStorage.setItem('loggedIn', 'true');
       return true;
     } else {
       console.log('Failed to log in');
@@ -37,7 +38,8 @@ export async function logoutUser() {
       credentials: 'include',
     });
     console.log('Logged out successfully');
-    Cookies.remove('session');
+    localStorage.setItem('loggedIn', 'false');
+    // Cookies.remove('session');
   }
   catch (error) {
     console.error('An error occurred:', error);

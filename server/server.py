@@ -85,8 +85,10 @@ def display_email():
             mail = usermails_collection.find_one({'name': value, 'access': 'public'})
 
     if mail:
-        mail['user_id'] = str(mail['user_id'])
         print(mail)
+        if 'user_id' in mail:
+            mail['user_id'] = str(mail['user_id'])
+            
         response = make_response(mail, 200)
         response.headers["Access-Control-Allow-Credentials"] = "true"
         return response
@@ -200,7 +202,9 @@ def login():
 @login_required
 def logout():
     logout_user()
-    return jsonify({"message": "Logged out successfully"}), 200
+    response = make_response(jsonify({"message": "Logged out successfully"}), 200)
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
 
 
 

@@ -8,58 +8,69 @@ import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Box from '@mui/material/Box';
 
-import { isLoggedIn } from '@/lib/utils/auth';
 import { useRouter } from 'next/router';
 import { logoutUser } from '@/lib/requests/auth';
 
-interface NavbarElement { 
-    href: string;
-    text: string;
+interface NavbarElement {
+  href: string;
+  text: string;
 }
 
 
-function navbarElements() {
+function navbarElements(loggedIn: boolean) {
 
-    if (isLoggedIn()) {
-        return [
-            {'href': '/profile', 'text': 'Profile'},
-            {'href': '/generate', 'text': 'New Email'},
-            {'href': '/logout', 'text': 'Logout'}
-        ]
-    } else {
-        return [
-            {'href': '/login', 'text': 'Login'},
-            {'href': '/register', 'text': 'Register'},
-        ]
-    }
+  if (loggedIn) {
+    return [
+      { 'href': '/profile', 'text': 'Profile' },
+      { 'href': '/generate', 'text': 'New Email' },
+      { 'href': '/logout', 'text': 'Logout' }
+    ]
+  } else {
+    return [
+      { 'href': '/generate', 'text': 'New Email' },
+      { 'href': '/login', 'text': 'Login' },
+      { 'href': '/register', 'text': 'Register' },
+    ]
+  }
 }
 
-const NavbarButton = ({href, text}: NavbarElement) => {
-    const router = useRouter();
+const NavbarButton = ({ href, text }: NavbarElement) => {
+  const router = useRouter();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        router.push(
-            {
-                pathname: href,
-            },
-        );
-    };
-
-    if (href === '/logout') {
-        return (
-            <Button onClick={() => {logoutUser(); router.push({pathname: '/'});}} color="inherit" key={text}>{text}</Button>
-        );
-    }
-
-
-    return (
-        <Button onClick={handleSubmit} color="inherit" key={text}>{text}</Button>
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    router.push(
+      {
+        pathname: href,
+      },
     );
+  };
+
+  if (href === '/logout') {
+    return (
+      <Button onClick={() => { logoutUser(); router.push({ pathname: '/' }); }} color="inherit" key={text}>{text}</Button>
+    );
+  }
+
+
+  return (
+    <Button onClick={handleSubmit} color="inherit" key={text}>{text}</Button>
+  );
 }
 
 
 const Navbar = () => {
+
+  const [loggedIn, setLoggedIn] = React.useState(false);
+
+  useEffect(() => {
+    if (localStorage.getItem('loggedIn') === 'true') {
+      setLoggedIn(true);
+    } else {
+      setLoggedIn(false);
+    }
+  }, []);
+
   return (
     <AppBar position="static">
       <Toolbar>
@@ -69,7 +80,7 @@ const Navbar = () => {
           </Link>
         </Typography>
         <Box>
-          {navbarElements().map((element) => NavbarButton(element))}
+          {navbarElements(loggedIn).map((element) => NavbarButton(element))}
         </Box>
       </Toolbar>
     </AppBar>

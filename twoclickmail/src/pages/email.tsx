@@ -12,6 +12,8 @@ import { EmailData, EmailObject, EmailRequest } from "@/lib/types";
 import { generateMailto } from "@/lib/common";
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import Layout from "@/components/layout";
+import ShareButton from "@/components/ShareButton";
+
 // Assuming the fetchWebsiteData function is in the same file, otherwise import it
 
 function CommaSeparatedMail(to: string[]) {
@@ -61,11 +63,11 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
 
     return {
-        props: { emailObject }, // will be passed to the page component as props
+        props: { emailObject, requestType, value }, // will be passed to the page component as props
     }
 }
 
-const Email = ({ emailObject }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Email = ({ emailObject, requestType, value }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
 
     const emailData = emailObject.data;
     // console.log(emailData);
@@ -96,14 +98,25 @@ const Email = ({ emailObject }: InferGetServerSidePropsType<typeof getServerSide
                                 </Typography>
                             )}
                             <Typography variant="h6" component="p" gutterBottom>
-                                {emailData.body}
+                                {emailData.body.split("\n").map((item: string, key: number) => {
+                                    return (
+                                        <span key={key}>
+                                            {item}
+                                            <br />
+                                        </span>
+                                    );
+                                })
+
+                                }
                             </Typography>
-                            <Box sx={{ mt: 4 }}>
+
+                            <Box sx={{ mt: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
                                 <Link href={mailto} target="_blank" rel="noopener noreferrer">
                                     <Button variant="contained" color="primary">
                                         Send
                                     </Button>
                                 </Link>
+                                <ShareButton url={`http://localhost:3000/email?requestType=${requestType}&value=${value}`} />
                             </Box>
                         </Box>
                     </Paper>
