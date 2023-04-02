@@ -1,0 +1,16 @@
+
+# Flask Requirements
+flask
+flask_login
+flask_bcrypt
+
+# Development Requirements
+# logging
+
+# Mongo DB Requirements
+bson
+pymongo
+
+# Other Requirements
+python-dotenv
+
