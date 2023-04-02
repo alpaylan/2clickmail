@@ -8,7 +8,6 @@ flask_bcrypt
 # logging
 
 # Mongo DB Requirements
-bson
 pymongo
 
 # Other Requirements
