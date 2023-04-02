@@ -116,7 +116,7 @@ const Email = ({ emailObject, requestType, value }: InferGetServerSidePropsType<
                                         Send
                                     </Button>
                                 </Link>
-                                <ShareButton url={`http://localhost:3000/email?requestType=${requestType}&value=${value}`} />
+                                <ShareButton url={`${process.env.PUBLIC_URL}/email?requestType=${requestType}&value=${value}`} />
                             </Box>
                         </Box>
                     </Paper>

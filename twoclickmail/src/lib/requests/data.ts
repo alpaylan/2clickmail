@@ -5,7 +5,7 @@ export async function generate(
   email: EmailData
 ): Promise<string | null> {
   try {
-    const response = await fetch('http://127.0.0.1:5000/generate', {
+    const response = await fetch(`${process.env.SERVER_URL}/generate`, {
       method: 'POST',
       mode: 'cors',
       credentials: 'include',
@@ -31,7 +31,7 @@ export async function fetchEmail(
   req: EmailRequest
 ): Promise<EmailObject | null> {
   try {
-    const response = await fetch(`http://127.0.0.1:5000/email?type=${req.type}&value=${req.value}`, { 
+    const response = await fetch(`${process.env.SERVER_URL}/email?type=${req.type}&value=${req.value}`, { 
       method: 'GET', 
       mode: 'cors',
       credentials: 'include',
@@ -52,7 +52,7 @@ export async function fetchEmail(
 
 export async function fetchProfile(): Promise<ProfileData | null> {
   try {
-    const response = await fetch('http://127.0.0.1:5000/profile', {
+    const response = await fetch(`${process.env.SERVER_URL}/profile`, {
       method: 'GET',
       mode: 'cors',
       credentials: 'include',
@@ -73,7 +73,7 @@ export async function fetchProfile(): Promise<ProfileData | null> {
 
 export async function deleteEmail(id: string): Promise<boolean> {
     try {
-      const response = await fetch(`http://127.0.0.1:5000/profile/delete`, {
+      const response = await fetch(`${process.env.SERVER_URL}/profile/delete`, {
         method: 'POST',
         mode: 'cors',
         credentials: 'include',
@@ -97,7 +97,7 @@ export async function deleteEmail(id: string): Promise<boolean> {
     email: EmailObject,
   ): Promise<boolean> {
     try {
-      const response = await fetch(`http://127.0.0.1:5000/profile/update`, {
+      const response = await fetch(`${process.env.SERVER_URL}/profile/update`, {
         method: 'POST',
         mode: 'cors',
         credentials: 'include',

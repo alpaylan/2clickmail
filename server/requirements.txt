@@ -1,6 +1,7 @@
 
 # Flask Requirements
 flask
+flask_cors
 flask_login
 flask_bcrypt
 

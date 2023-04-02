@@ -3,19 +3,20 @@ from pymongo import MongoClient
 from bson import ObjectId
 import base64
 import os
-import logging
-from logging.handlers import RotatingFileHandler
 from flask_cors import CORS, cross_origin
 from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
 import json
 from Types import *
+from dotenv import load_dotenv
+
+load_dotenv()
 
 from utils import *
 
 app = Flask(__name__)
-CORS(app, origins="http://localhost:3000", supports_credentials=True)
-app.secret_key = 'your_secret_key'  # Replace this with a random secret key
+CORS(app, origins=os.getenv('PUBLIC_URL'), supports_credentials=True)
+app.secret_key = os.getenv('SECRET_KEY')
 app.config['CORS_HEADERS'] = 'Content-Type'
 app.config['SESSION_COOKIE_SECURE'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'None'
@@ -24,14 +25,14 @@ bcrypt = Bcrypt(app)
 login_manager = LoginManager(app)
 login_manager.login_view = "login"
 
-# Set up logging
-handler = RotatingFileHandler('twoclickmail.log', maxBytes=10000, backupCount=1)
-handler.setLevel(logging.INFO)
-app.logger.addHandler(handler)
-app.logger.setLevel(logging.INFO)
+# # Set up logging
+# handler = RotatingFileHandler('twoclickmail.log', maxBytes=10000, backupCount=1)
+# handler.setLevel(logging.INFO)
+# app.logger.addHandler(handler)
+# app.logger.setLevel(logging.INFO)
 
 # Connect to the MongoDB server
-client = MongoClient('mongodb://localhost:27017/')
+client = MongoClient(os.getenv('MONGO_URL'))
 
 # Create a new database called 'twoclickmail'
 db = client['twoclickmail']
@@ -96,6 +97,7 @@ def display_email():
         return {'error': 'Website not found'}, 404
 
 @app.route('/profile', methods=['GET'])
+@cross_origin()
 @login_required
 def profile():
     print('hey')
@@ -112,7 +114,6 @@ def profile():
     }
 
     response = make_response(profileData, 200)
-    response.headers["Access-Control-Allow-Origin"] = "http://localhost:3000"
     response.headers["Access-Control-Allow-Credentials"] = "true"
     return response
 
@@ -179,6 +180,7 @@ def register():
     return response
 
 @app.route('/login', methods=['POST', 'GET'])
+@cross_origin()
 def login():
     email = request.form.get("email")
     password = request.form.get("password")
@@ -192,7 +194,6 @@ def login():
         session['user_id'] = str(user['_id'])
         response = make_response(jsonify({"message": "Logged in successfully"}), 200)
         response.headers['Access-Control-Allow-Credentials'] = 'true'
-        response.headers['Access-Control-Allow-Origin'] = "http://localhost:3000"
         return response
     else:
         return jsonify({"error": "Invalid email or password"}), 401

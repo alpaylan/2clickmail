@@ -1,6 +1,6 @@
 export async function loginUser(email: string, password: string): Promise<boolean> {
   try {
-    const response = await fetch('http://127.0.0.1:5000/login', {
+    const response = await fetch(`${process.env.SERVER_URL}/login`, {
       method: 'POST',
       mode: 'cors',
       credentials: 'include',
@@ -30,7 +30,7 @@ export async function loginUser(email: string, password: string): Promise<boolea
 
 export async function logoutUser() {
   try {
-    const _ = await fetch('http://127.0.0.1:5000/logout', {
+    const _ = await fetch(`${process.env.SERVER_URL}/logout`, {
       method: 'POST',
       mode: 'cors',
       credentials: 'include',
@@ -46,7 +46,7 @@ export async function logoutUser() {
 
 export async function registerUser(email: string, password: string): Promise<boolean> {
   try {
-    const response = await fetch('http://127.0.0.1:5000/register', {
+    const response = await fetch(`${process.env.SERVER_URL}/register`, {
       method: 'POST',
       mode: 'cors',
       credentials: 'include',
