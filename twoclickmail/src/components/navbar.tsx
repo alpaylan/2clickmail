@@ -48,7 +48,7 @@ const NavbarButton = ({ href, text }: NavbarElement) => {
 
   if (href === '/logout') {
     return (
-      <Button onClick={() => { logoutUser(); router.push({ pathname: '/' }); }} color="inherit" key={text}>{text}</Button>
+      <Button onClick={() => { logoutUser(); router.push({ pathname: '/login' }); }} color="inherit" key={text}>{text}</Button>
     );
   }
 
