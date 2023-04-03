@@ -23,7 +23,6 @@ const Profile: React.FC = () => {
     const fetch = async () => {
       const profile = await fetchProfile();
       if (profile) {
-        console.log(profile.emails);
         setMails(profile.emails);
       }
     };

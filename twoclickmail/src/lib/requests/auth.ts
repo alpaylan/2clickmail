@@ -15,7 +15,6 @@ export async function loginUser(email: string, password: string): Promise<boolea
 
     if (response.status === 200) {
       console.log('Logged in successfully');
-      console.error(response);
       localStorage.setItem('loggedIn', 'true');
       return true;
     } else {
