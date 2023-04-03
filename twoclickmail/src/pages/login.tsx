@@ -22,7 +22,6 @@ const Login: React.FC = () => {
     const success = await loginUser(email, password);
     console.log(success);
     if (success) {
-        console.log('success');
         router.push(
           {
             pathname: '/profile',
