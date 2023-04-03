@@ -14,22 +14,30 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faLink,
 } from "@fortawesome/free-solid-svg-icons";
+import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 
 
-const Profile: React.FC = () => {
-  const [mails, setMails] = useState<EmailObject[]>([]);
-
-  useEffect(() => {
-    const fetch = async () => {
-      const profile = await fetchProfile();
-      if (profile) {
-        console.log(profile.emails);
-        setMails(profile.emails);
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const profile = await fetchProfile();
+  
+  if (!profile) {
+      return {
+          redirect: {
+              destination: '/login',
+              permanent: false,
+          },
       }
-    };
-    fetch();
-  }, []);
+  }
 
+  return {
+      props: { profile }, // will be passed to the page component as props
+  }
+}
+
+
+const Profile: React.FC = ({profile}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+
+  const mails: EmailObject[] = profile.emails;
   return (
     <Layout>
       <Container>
