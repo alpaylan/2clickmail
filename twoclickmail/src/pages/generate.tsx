@@ -1,19 +1,26 @@
+// React Imports
 import React, { useState, FormEvent, ChangeEvent } from "react";
+
+// Next Imports
+import { useRouter } from 'next/router';
+
+// Material UI Imports
+import { Autocomplete, Chip } from "@mui/material";
 import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import { styled } from "@mui/system";
-import { Autocomplete, Chip } from "@mui/material";
 
-import { useRouter } from 'next/router';
-
-import { generate } from "../lib/requests/data";
-import Layout from "@/components/layout";
-
+// External Imports
 import * as EmailValidator from "email-validator";
 
+// Local Imports
+import { generate } from "@/lib/requests/data";
+
+// Local Components
+import Layout from "@/components/layout";
 
 
 const Generate: React.FC = () => {
@@ -47,11 +54,11 @@ const Generate: React.FC = () => {
       router.push(
         {
           pathname: "/email",
-          query: { requestType: 'id', value: uniqueId },
+          query: { "type": "EmailById", "value": uniqueId },
         }
       );
     } else {
-      console.error("No unique id");
+      console.error("Mail could not be generated");
     }
 
 

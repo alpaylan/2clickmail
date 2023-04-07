@@ -11,6 +11,8 @@ import Box from '@mui/material/Box';
 import { useRouter } from 'next/router';
 import { logoutUser } from '@/lib/requests/auth';
 
+import Cookies from 'js-cookie';
+
 interface NavbarElement {
   href: string;
   text: string;
@@ -64,7 +66,7 @@ const Navbar = () => {
   const [loggedIn, setLoggedIn] = React.useState(false);
 
   useEffect(() => {
-    if (localStorage.getItem('loggedIn') === 'true') {
+    if (Cookies.get('token')) {
       setLoggedIn(true);
     } else {
       setLoggedIn(false);

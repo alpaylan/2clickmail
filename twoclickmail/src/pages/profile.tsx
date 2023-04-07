@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 
 import { fetchProfile } from "@/lib/requests/data";
 import { Table, TableBody, TableCell, TableContainer, TableHead, TableRow } from '@material-ui/core';
@@ -14,20 +14,43 @@ import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
   faLink,
 } from "@fortawesome/free-solid-svg-icons";
+import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 
 
-const Profile: React.FC = () => {
-  const [mails, setMails] = useState<EmailObject[]>([]);
 
-  useEffect(() => {
-    const fetch = async () => {
-      const profile = await fetchProfile();
-      if (profile) {
-        setMails(profile.emails);
-      }
+export const getServerSideProps: GetServerSideProps = async (context) => {
+  const { req, res } = context;
+  const { cookies } = req;
+  const { token } = cookies;
+
+  if (!token) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
     };
-    fetch();
-  }, []);
+  }
+
+  const profile = await fetchProfile(token);
+
+  if (!profile) {
+    return {
+      redirect: {
+        destination: "/login",
+        permanent: false,
+      },
+    };
+  }
+
+
+  return {
+    props: {profile},
+  };
+};
+
+
+const Profile: React.FC = ({profile}: InferGetServerSidePropsType<typeof getServerSideProps>) => {
 
   return (
     <Layout>
@@ -50,11 +73,11 @@ const Profile: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {mails.map(mail => (
-                  <TableRow key={mail._id}>
+                {profile.emails.map((mail: any) => (
+                  <TableRow key={mail._id["$oid"]}>
                     <TableCell>{mail.data.to}</TableCell>
                     <TableCell>{mail.data.subject}</TableCell>
-                    <TableCell><Link href={`/email?requestType=id&value=${mail._id}`}>
+                    <TableCell><Link href={`/email?type=EmailById&value=${mail._id["$oid"]}`}>
                       <FontAwesomeIcon icon={faLink} />
                   </Link></TableCell>
                   </TableRow>

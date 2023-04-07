@@ -1,22 +1,25 @@
 import { EmailObject, EmailData, EmailRequest, ProfileData } from '../types';
-
+import Cookies from 'js-cookie';
 
 export async function generate(
   email: EmailData
 ): Promise<string | null> {
   try {
+    console.log('Generating email website');
+    console.log(JSON.stringify(email));
     const response = await fetch(`${process.env.SERVER_URL}/generate`, {
       method: 'POST',
       mode: 'cors',
-      credentials: 'include',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${Cookies.get('token')}`
       },
-      body: new URLSearchParams({'params': JSON.stringify(email)})
+      body: JSON.stringify({ name: null, email: email })
     });
     if (response.ok) {
       const data = await response.json();
-      return data.id;
+      console.log(JSON.stringify(data));
+      return data['$oid'];
     } else {
       console.error('Error generating email website:', response);
       return null;
@@ -31,10 +34,9 @@ export async function fetchEmail(
   req: EmailRequest
 ): Promise<EmailObject | null> {
   try {
-    const response = await fetch(`${process.env.SERVER_URL}/email?type=${req.type}&value=${req.value}`, { 
+    const response = await fetch(`${process.env.SERVER_URL}/email?${req.type}=${req.value}`, { 
       method: 'GET', 
       mode: 'cors',
-      credentials: 'include',
     });
 
     if (response.ok) {
@@ -50,18 +52,23 @@ export async function fetchEmail(
   }
 }
 
-export async function fetchProfile(): Promise<ProfileData | null> {
+export async function fetchProfile(token: String): Promise<ProfileData | null> {
   try {
+    console.log('Fetching profile data');
+    
     const response = await fetch(`${process.env.SERVER_URL}/profile`, {
       method: 'GET',
       mode: 'cors',
-      credentials: 'include',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
     });
     if (response.ok) {
       const data: ProfileData = await response.json();
+      console.log(JSON.stringify(data));
       return data;
     } else {
-      console.error('Error fetching profile data:', response);
+      console.error('Error fetching profile data:', JSON.stringify(response));
       return null;
     }
   } catch (error) {
@@ -76,7 +83,6 @@ export async function deleteEmail(id: string): Promise<boolean> {
       const response = await fetch(`${process.env.SERVER_URL}/profile/delete`, {
         method: 'POST',
         mode: 'cors',
-        credentials: 'include',
         body: new URLSearchParams(JSON.stringify({ id: id }))
       });
       if (response.status === 200) {
@@ -100,11 +106,9 @@ export async function deleteEmail(id: string): Promise<boolean> {
       const response = await fetch(`${process.env.SERVER_URL}/profile/update`, {
         method: 'POST',
         mode: 'cors',
-        credentials: 'include',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-  
         body: new URLSearchParams(JSON.stringify(email))
       });
   

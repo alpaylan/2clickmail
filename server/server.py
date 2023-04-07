@@ -4,8 +4,8 @@ from bson import ObjectId
 import base64
 import os
 from flask_cors import CORS, cross_origin
-from flask_login import LoginManager, login_user, logout_user, login_required, current_user
 from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import json
 from Types import *
 from dotenv import load_dotenv
@@ -16,14 +16,10 @@ from utils import *
 
 app = Flask(__name__)
 CORS(app, origins=os.getenv('PUBLIC_URL'), supports_credentials=True)
-app.secret_key = os.getenv('SECRET_KEY')
+app.config['JWY_SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['CORS_HEADERS'] = 'Content-Type'
-app.config['SESSION_COOKIE_SECURE'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'None'
 
 bcrypt = Bcrypt(app)
-login_manager = LoginManager(app)
-login_manager.login_view = "login"
 
 # # Set up logging
 # handler = RotatingFileHandler('twoclickmail.log', maxBytes=10000, backupCount=1)
@@ -179,22 +175,18 @@ def register():
     response.headers['Access-Control-Allow-Credentials'] = 'true'
     return response
 
-@app.route('/login', methods=['POST', 'GET'])
+@app.route('/login', methods=['POST'])
 @cross_origin()
 def login():
     email = request.form.get("email")
     password = request.form.get("password")
 
-
+    
     user = users_collection.find_one({'email': email})
 
     if user and bcrypt.check_password_hash(user['password'], password):
-        login_user(User(user['_id'], user['email'], user['password']))
-        print('Session:', session)
-        session['user_id'] = str(user['_id'])
-        response = make_response(jsonify({"message": "Logged in successfully"}), 200)
-        response.headers['Access-Control-Allow-Credentials'] = 'true'
-        return response
+        access_token = create_access_token(identity=user['_id'])
+        return jsonify({"message": "Logged in successfully", "access_token": access_token}), 200
     else:
         return jsonify({"error": "Invalid email or password"}), 401
 

@@ -1,21 +1,23 @@
+import Cookies from 'js-cookie';
+
 export async function loginUser(email: string, password: string): Promise<boolean> {
   try {
     const response = await fetch(`${process.env.SERVER_URL}/login`, {
       method: 'POST',
       mode: 'cors',
-      credentials: 'include',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: new URLSearchParams({
-        email: email,
+      body: JSON.stringify({
+        usermail: email,
         password: password,
       })
     });
 
     if (response.status === 200) {
       console.log('Logged in successfully');
-      localStorage.setItem('loggedIn', 'true');
+      const data = await response.json();
+      Cookies.set('token', data["Success"]);
       return true;
     } else {
       console.log('Failed to log in');
@@ -29,14 +31,12 @@ export async function loginUser(email: string, password: string): Promise<boolea
 
 export async function logoutUser() {
   try {
-    const _ = await fetch(`${process.env.SERVER_URL}/logout`, {
-      method: 'POST',
-      mode: 'cors',
-      credentials: 'include',
-    });
+    // const _ = await fetch(`${process.env.SERVER_URL}/logout`, {
+    //   method: 'POST',
+    //   mode: 'cors',
+    // });
     console.log('Logged out successfully');
-    localStorage.setItem('loggedIn', 'false');
-    // Cookies.remove('session');
+    Cookies.remove('token');
   }
   catch (error) {
     console.error('An error occurred:', error);
@@ -48,17 +48,18 @@ export async function registerUser(email: string, password: string): Promise<boo
     const response = await fetch(`${process.env.SERVER_URL}/register`, {
       method: 'POST',
       mode: 'cors',
-      credentials: 'include',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: new URLSearchParams({
-        email: email,
+      body: JSON.stringify({
+        usermail: email,
         password: password,
       })
     });
-    if (response.status === 200) {
+    if (response.status === 201) {
       console.log('Registered successfully');
+      const data = await response.json();
+      Cookies.set('token', data["Success"]);
       return true;
     } else {
       console.log('Failed to register');
