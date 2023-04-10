@@ -100,7 +100,25 @@ const MailBox = ({ name, emails, setEmails, input, setInput }: MailBoxProps) => 
   />)
 }
 
-export const MailEditForm = ({emailData = {to: [], cc: [], bcc: [], subject: '', body: ''}, id = null, mode = 'generate'}: {emailData?: EmailData, id?: string | null, mode: string}) => {
+const extractEmails = (emails: string) => {
+  const validMails = [];
+  const invalidMails = [];
+
+  const newValues = emails.split(/,| |;/).filter((v: string) => v !== "");
+
+  for (let i = 0; i < newValues.length; i++) {
+    if (EmailValidator.validate(newValues[i])) {
+      validMails.push(newValues[i]);
+    } else {
+      invalidMails.push(newValues[i]);
+    }
+  }
+
+  return { validMails, invalidMails };
+}
+
+
+export const MailEditForm = ({ emailData = { to: [], cc: [], bcc: [], subject: '', body: '' }, id = null, mode = 'generate' }: { emailData?: EmailData, id?: string | null, mode: string }) => {
   const [to, setTo] = useState<string[]>(emailData.to);
   const [toInput, setToInput] = useState<string>("");
   const [toErrorMessage, setToErrorMessage] = useState<string>("");
@@ -129,19 +147,30 @@ export const MailEditForm = ({emailData = {to: [], cc: [], bcc: [], subject: '',
 
   const handleSubmit = async (e: FormEvent) => {
 
+
     e.preventDefault();
     console.log("Submitted");
     let valid = true;
+    const { validMails: toValidMails, invalidMails: toInvalidMails } = extractEmails(toInput);
+    const { validMails: ccValidMails, invalidMails: ccInvalidMails } = extractEmails(ccInput);
+    const { validMails: bccValidMails, invalidMails: bccInvalidMails } = extractEmails(bccInput);
+    if (toInput.length > 0) {
+      setTo([...to, ...toValidMails]);
+      setToInput(toInvalidMails.join(", "));
 
-    if (to.length === 0) {
+      if (toInvalidMails.length > 0) {
+        setToErrorMessage("Invalid email(s) found: " + toInvalidMails.join(", "));
+        valid = false;
+      } else {
+        setToErrorMessage("");
+      }
+    } else if (to.length === 0) {
       setToErrorMessage("Please enter at least one email in the To field");
-      valid = false;
-    } else if (toInput.length > 0) {
-      setToErrorMessage("You have left some emails in the input field. Please remove them or press enter to add them to the list");
       valid = false;
     } else {
       setToErrorMessage("");
     }
+
 
     if (subject.length === 0) {
       setSubjectErrorMessage("Please enter a subject");
@@ -157,34 +186,54 @@ export const MailEditForm = ({emailData = {to: [], cc: [], bcc: [], subject: '',
       setBodyErrorMessage("");
     }
 
-    if (ccInput.length > 0) {
-      setCcErrorMessage("You have left some emails in the input field. Please remove them or press enter to add them to the list");
-      valid = false;
+    if (useCc && ccInput.length > 0) {
+
+      setCc([...cc, ...ccValidMails]);
+      setCcInput(ccInvalidMails.join(", "));
+
+      if (ccInvalidMails.length > 0) {
+        setCcErrorMessage("Invalid email(s) found: " + ccInvalidMails.join(", "));
+        valid = false;
+      } else {
+        setCcErrorMessage("");
+      }
     } else {
       setCcErrorMessage("");
     }
 
-    if (bccInput.length > 0) {
-      setBccErrorMessage("You have left some emails in the input field. Please remove them or press enter to add them to the list");
-      valid = false;
+
+    if (useBcc && bccInput.length > 0) {
+
+      setBcc([...bcc, ...bccValidMails]);
+      setBccInput(bccInvalidMails.join(", "));
+
+      if (bccInvalidMails.length > 0) {
+        setBccErrorMessage("Invalid email(s) found: " + bccInvalidMails.join(", "));
+        valid = false;
+      } else {
+        setBccErrorMessage("");
+      }
     } else {
       setBccErrorMessage("");
     }
+
 
     if (!valid) {
       return;
     }
 
     const emailData = {
-      to: to,
-      cc: cc,
-      bcc: bcc,
+      to: [...to, ...toValidMails],
+      cc: [...cc, ...ccValidMails],
+      bcc: [...bcc, ...bccValidMails],
       subject: subject,
       body: body,
     };
 
+    console.log(emailData);
+
     const uniqueId = await generate(emailData, id);
-    
+
 
     if (uniqueId) {
       router.push(
@@ -234,12 +283,16 @@ export const MailEditForm = ({emailData = {to: [], cc: [], bcc: [], subject: '',
         )}
       </Box>
       <Box sx={{ mb: 2 }}>
+      {((useBcc && bccErrorMessage) &&
+          <Alert severity="error">{bccErrorMessage}</Alert>)}
         {(useBcc &&
           <MailBox name="Bcc" emails={bcc} setEmails={setBcc} input={bccInput} setInput={setBccInput} />
         )}
       </Box>
 
       <Box sx={{ mb: 2 }}>
+      {((subjectErrorMessage) &&
+          <Alert severity="error">{subjectErrorMessage}</Alert>)}
         <TextField
           fullWidth
           label="Subject"
@@ -251,9 +304,11 @@ export const MailEditForm = ({emailData = {to: [], cc: [], bcc: [], subject: '',
       </Box>
 
       <Box sx={{ mb: 2 }}>
+      {((bodyErrorMessage) &&
+          <Alert severity="error">{bodyErrorMessage}</Alert>)}
         <TextField
           fullWidth
-          label="Content"
+          label="Body"
           multiline
           rows={15}
           value={body}
@@ -281,7 +336,7 @@ const Generate: React.FC = () => {
           <Typography variant="h4" gutterBottom style={{ color: '#000000' }}>
             Mass Mailing System
           </Typography>
-          <MailEditForm mode='generate'/>
+          <MailEditForm mode='generate' />
         </Box>
       </Container>
     </Layout>
