@@ -9,7 +9,7 @@ export async function generate(
     console.log('Generating email website');
     
     const headers = JSON.parse(`{"Content-Type": "application/json"${Cookies.get('token') ? `, "Authorization": "Bearer ${Cookies.get('token')}"` : ''}}`);
-    const response = await fetch(`${process.env.SERVER_URL}/generate`, {
+    const response = await fetch(`${process.env.SERVER_URL}/email`, {
       method: 'POST',
       mode: 'cors',
       headers: headers,

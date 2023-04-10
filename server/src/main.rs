@@ -52,10 +52,8 @@ async fn main() {
     let app = Router::new()
         .route("/register", post(register))
         .route("/login", post(login))
-        // .route("/logout", post(logout))
         .route("/profile", get(profile))
-        .route("/generate", post(post_email))
-        .route("/email", get(get_email))
+        .route("/email", get(get_email).post(post_email))
         .route("/health", get(|| async { StatusCode::NO_CONTENT }))
         .layer(cors)
         .layer(AddExtensionLayer::new(db))
@@ -63,8 +61,22 @@ async fn main() {
 
 
     // run our app with hyper
+
+    // check if this is dev
+    let mut is_dev = false;
+    for arg in std::env::args() {
+        if arg == "--dev" {
+            is_dev = true;
+        }
+    }
+
+    let addr = if is_dev {
+        SocketAddr::from(([127, 0, 0, 1], 8080))
+    } else {
+        SocketAddr::from(([0, 0, 0, 0], 8080))
+    };
     // `axum::Server` is a re-export of `hyper::Server`
-    let addr = SocketAddr::from(([127, 0, 0, 1], 5000));
+    let addr = SocketAddr::from(addr);
     tracing::debug!("listening on {}", addr);
     axum::Server::bind(&addr)
         .serve(app.into_make_service())

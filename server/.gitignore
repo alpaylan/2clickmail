@@ -1,6 +1,5 @@
-
-__pycache__
-
-*.log*
-
+target/
+.cargo/
+vendor/
+Dockerfile
 .env
