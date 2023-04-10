@@ -25,6 +25,7 @@ import Layout from "@/components/layout";
 import { ButtonGroup } from "@mui/material";
 import { EmailData } from "@/lib/types";
 import { EmailMetadata } from "./email";
+import { useMediaQuery } from "@mui/material";
 
 type MailBoxProps = {
   name: string;
@@ -119,6 +120,8 @@ export const MailEditForm = ({emailData = {to: [], cc: [], bcc: [], subject: '',
 
   const [body, setBody] = useState(emailData.body);
   const [bodyErrorMessage, setBodyErrorMessage] = useState<string>("");
+
+  const matches = useMediaQuery('(min-width:600px)');
 
   const router = useRouter();
 
@@ -215,7 +218,7 @@ export const MailEditForm = ({emailData = {to: [], cc: [], bcc: [], subject: '',
             />
           </Grid>
           <Grid item xs={2}>
-            <ButtonGroup>
+            <ButtonGroup orientation={matches ? 'horizontal' : 'vertical'}>
               <Button variant={useCc ? "contained" : "outlined"} onClick={() => (setUseCc(!useCc))} >  Cc: </Button>
               <Button variant={useBcc ? "contained" : "outlined"} onClick={() => (setUseBcc(!useBcc))}> Bcc: </Button>
             </ButtonGroup>
