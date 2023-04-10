@@ -6,7 +6,7 @@ module.exports = (phase, { defaultConfig }) => {
       reactStrictMode: true,
       env: {
         PUBLIC_URL: "localhost:3000",
-        SERVER_URL: "http://127.0.0.1:5000",
+        SERVER_URL: "http://127.0.0.1:8080",
       }
     }
   }
