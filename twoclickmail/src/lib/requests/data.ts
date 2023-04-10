@@ -2,24 +2,23 @@ import { EmailObject, EmailData, EmailRequest, ProfileData } from '../types';
 import Cookies from 'js-cookie';
 
 export async function generate(
-  email: EmailData
+  email: EmailData,
+  id: string | null
 ): Promise<string | null> {
   try {
     console.log('Generating email website');
-    console.log(JSON.stringify(email));
+    
+    const headers = JSON.parse(`{"Content-Type": "application/json"${Cookies.get('token') ? `, "Authorization": "Bearer ${Cookies.get('token')}"` : ''}}`);
     const response = await fetch(`${process.env.SERVER_URL}/generate`, {
       method: 'POST',
       mode: 'cors',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${Cookies.get('token')}`
-      },
-      body: JSON.stringify({ name: null, email: email })
+      headers: headers,
+      body: JSON.stringify({ name: null, email: email, id: id })
     });
     if (response.ok) {
       const data = await response.json();
       console.log(JSON.stringify(data));
-      return data['$oid'];
+      return data;
     } else {
       console.error('Error generating email website:', response);
       return null;
@@ -34,7 +33,7 @@ export async function fetchEmail(
   req: EmailRequest
 ): Promise<EmailObject | null> {
   try {
-    const response = await fetch(`${process.env.SERVER_URL}/email?${req.type}=${req.value}`, { 
+    const response = await fetch(`${process.env.SERVER_URL}/email?$value=${req.value}`, { 
       method: 'GET', 
       mode: 'cors',
     });

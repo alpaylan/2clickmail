@@ -5,11 +5,12 @@ use axum::{
     Router,
     extract::{Extension, Query}, AddExtensionLayer,
 };
+use bson::Document;
 use hyper::HeaderMap;
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Serialize, __private::doc};
 use std::{net::SocketAddr, collections::HashMap};
 
-use mongodb::{bson::doc, options::ClientOptions, Client, Collection};
+use mongodb::{bson::doc, options::{ClientOptions, UpdateOptions, UpdateModifications}, Client, Collection};
 use jsonwebtoken::{encode, Header, EncodingKey, decode, DecodingKey, Validation, TokenData, Algorithm};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::trace::TraceLayer;
@@ -21,11 +22,8 @@ use tracing::{info, debug, error, warn, trace, instrument, span, Level};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
-async fn default(
-) -> (StatusCode, Json<String>) {
-    debug!("Default route");
-    (StatusCode::OK, Json("Hello World!".to_string()))
-}
+static SECRET_KEY : &'static str = std::env!("SECRET_KEY");
+static MONGO_URL : &'static str = std::env!("MONGO_URL");
 
 
 
@@ -36,14 +34,14 @@ async fn main() {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "twoclickmail_server=debug".into()),
+                .unwrap_or_else(|_| "twoclickmail=debug".into()),
         )
         .with(tracing_subscriber::fmt::layer())
         .init();
 
 
 
-    let db = Arc::new(Client::with_options(ClientOptions::parse("mongodb://localhost:27017").await.unwrap()).unwrap());
+    let db = Arc::new(Client::with_options(ClientOptions::parse(MONGO_URL).await.unwrap()).unwrap());
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
@@ -52,13 +50,13 @@ async fn main() {
 
     // build our application with a route
     let app = Router::new()
-        .route("/", get(default))
         .route("/register", post(register))
         .route("/login", post(login))
         // .route("/logout", post(logout))
         .route("/profile", get(profile))
-        .route("/generate", post(generate))
-        .route("/email", get(get_email)/*.post(post_email)*/)
+        .route("/generate", post(post_email))
+        .route("/email", get(get_email))
+        .route("/health", get(|| async { StatusCode::NO_CONTENT }))
         .layer(cors)
         .layer(AddExtensionLayer::new(db))
         .layer(TraceLayer::new_for_http());
@@ -98,10 +96,19 @@ struct LoginRequest {
     password: String,
 }
 
-
 type AccessToken = String;
-type UserId = bson::oid::ObjectId;
-type EmailId = bson::oid::ObjectId;
+
+#[derive(Serialize, Deserialize, Debug)]
+struct Uid {}
+impl Uid {
+    fn new() -> String {
+        bson::oid::ObjectId::new().to_string()
+    }
+}
+
+type UserId = String;
+type EmailId = String;
+
 type ErrorMessage = String;
 
 #[derive(Serialize)]
@@ -149,14 +156,14 @@ async fn login(
         return (StatusCode::BAD_REQUEST, Json(LoginResponse::Failure("Wrong password".to_string())));
     }
 
-    let uid = user._id.clone();
+    let uid = user._id;
     let iat = chrono::Utc::now().timestamp() as usize;
     let exp = iat + 10000000;
     let claims = Claims { uid, iat, exp };
 
     let token = create_jwt(
         &claims,
-        "secret".to_owned().as_bytes(),
+        SECRET_KEY.to_owned().as_bytes(),
     ).unwrap();
 
 
@@ -188,7 +195,7 @@ async fn register(
         return (StatusCode::BAD_REQUEST, Json(RegisterResponse::Failure("User already exists".to_string())));
     }
 
-    let user = User { _id: UserId::new(), usermail: payload.usermail.clone(), password: payload.password.clone(), username: None };
+    let user = User { _id: Uid::new(), usermail: payload.usermail.clone(), password: payload.password.clone(), username: None };
     let uid = user._id.clone();
     users.insert_one(user, None).await.unwrap();
 
@@ -198,7 +205,7 @@ async fn register(
 
     let token = create_jwt(
         &claims,
-        "secret".to_owned().as_bytes(),
+        SECRET_KEY.to_owned().as_bytes(),
     ).unwrap();
     
     // this will be converted into a JSON response
@@ -240,6 +247,19 @@ struct EmailData {
     body: String
 }
 
+impl Into<Document> for EmailData {
+    fn into(self) -> Document {
+        doc! {
+                "to": self.to,
+                "cc": self.cc,
+                "bcc": self.bcc,
+                "subject": self.subject,
+                "body": self.body,
+        }
+    }
+}
+
+
 
 #[derive(Serialize, Deserialize, Debug)]
 struct Email {
@@ -248,6 +268,7 @@ struct Email {
     user_id: Option<UserId>,
     data: EmailData,
 }
+
 
 #[derive(Serialize)]
 struct Profile {
@@ -293,7 +314,7 @@ async fn profile(
     debug!("User found: {:?}", user);
 
     let emails : Collection<Email> = db.database("twoclickmail").collection("emails");
-    let emails: Vec<Email> = emails.find(doc! {"user_id": user._id}, None).await.unwrap().try_collect().await.unwrap();
+    let emails: Vec<Email> = emails.find(doc! {"user_id": user._id.clone()}, None).await.unwrap().try_collect().await.unwrap();
 
     if emails.len() == 0 {
         return (StatusCode::OK, Json(Some(Profile { user, emails: vec![] })));
@@ -313,10 +334,11 @@ struct Credentials {
 #[derive(Serialize, Deserialize, Debug)]
 struct GenerateRequest {
     name: Option<String>,
+    id: Option<EmailId>,
     email: EmailData,
 }
 
-async fn generate(
+async fn post_email(
     headers: HeaderMap,
     body: String, // Json(payload): Json<GenerateRequest>,
     Extension(db) : Extension<Arc<Client>>,
@@ -328,7 +350,7 @@ async fn generate(
 
     debug!("Generating email: {:?}", payload);
 
-    match token {
+    let user_id = match token {
         Some(token) => {
             let token = token.to_str().unwrap().to_string();
             let token_data = auth_session(token).await;
@@ -353,33 +375,43 @@ async fn generate(
 
             debug!("User found: {:?}", user);
 
-            let emails : Collection<Email> = db.database("twoclickmail").collection("emails");
-            let email = Email { _id: EmailId::new(), name: payload.name, user_id: Some(user._id), data: payload.email };
-            let email_id = email._id.clone();
+            Some(user._id)
+        }
+        None => {
+            None
+        }
+    };
 
-            debug!("Email: {:?}", email);
+
+    let emails : Collection<Email> = db.database("twoclickmail").collection("emails");
+
+            
+    match payload.id {
+        Some(id) => {
+
+            let query = match user_id {
+                Some(user_id) => doc! {"_id": id.clone(), "user_id": user_id},
+                None => doc! {"_id": id.clone()}
+            };
+            let update = doc! { "$set": { "data": <EmailData as Into<Document>>::into(payload.email) } };
+            let options = Some(UpdateOptions::builder().upsert(true).build());
+
+            emails.update_one(query, update, options).await.unwrap();
+
+            debug!("Email updated");
+
+            (StatusCode::OK, Json(Some(id)))
+        },
+        None => {
+            let email = Email { _id: Uid::new(), name: payload.name, user_id: user_id, data: payload.email };
+            let email_id = email._id.clone();
             emails.insert_one(email, None).await.unwrap();
 
             debug!("Email inserted");
 
             (StatusCode::OK, Json(Some(email_id)))
-        },
-        None => {
-            let emails : Collection<Email> = db.database("twoclickmail").collection("emails");
-            let email = Email { _id: EmailId::new(), name: payload.name, user_id: None, data: payload.email };
-            let email_id = email._id.clone();
-            emails.insert_one(email, None).await.unwrap();
-
-            (StatusCode::OK, Json(Some(email_id)))
         }
     }
-}
-
-
-#[derive(Serialize, Deserialize, Debug)]
-enum GetEmailRequest {
-    EmailByName(String),
-    EmailById(EmailId),
 }
 
 async fn get_email(
@@ -388,26 +420,20 @@ async fn get_email(
 ) -> (StatusCode, Json<Option<Email>>) {
     
         debug!("Getting email: {:?}", params);
-        let payload = match params.get("EmailByName") {
-            Some(name) => GetEmailRequest::EmailByName(name.to_string()),
-            None => {
-                match params.get("EmailById") {
-                    Some(id) => GetEmailRequest::EmailById(EmailId::parse_str(id).unwrap()),
-                    None => return (StatusCode::BAD_REQUEST, Json(None))
-                }
-            }
-        };
+        let payload = params.get("$value");
         debug!("Getting email: {:?}", payload);
 
+        if payload.is_none() {
+            return (StatusCode::BAD_REQUEST, Json(None));
+        }
+
+        let payload = payload.unwrap();
+
+
+
         let emails : Collection<Email> = db.database("twoclickmail").collection("emails");
-        let email = match payload {
-            GetEmailRequest::EmailByName(name) => {
-                emails.find_one(doc! {"name": name}, None).await.unwrap()
-            },
-            GetEmailRequest::EmailById(id) => {
-                emails.find_one(doc! {"_id": id}, None).await.unwrap()
-            }
-        };
+        debug!("old: {:?}", emails.find_one(doc! { "_id": payload }, None).await.unwrap());
+        let email = emails.find_one(doc! { "$or": [{ "_id": payload }, { "name": payload }]}, None).await.unwrap();
         
         debug!("Email found: {:?}", email);
 
@@ -423,7 +449,7 @@ async fn auth_session(token: String) -> Option<TokenData<Claims>> {
 
     let token = token.replace("Bearer ", "");
     debug!("Authenticating session: {}", token);
-    let token_message = decode::<Claims>(&token, &DecodingKey::from_secret("secret".as_ref()), &Validation::new(Algorithm::HS256));
+    let token_message = decode::<Claims>(&token, &DecodingKey::from_secret(SECRET_KEY.as_ref()), &Validation::new(Algorithm::HS256));
 
     debug!("Token Message: {:?}", token_message);
 

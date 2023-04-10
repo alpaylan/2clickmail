@@ -1,35 +1,43 @@
+import { TableContainer } from "@mui/material";
+import React from "react";
 
-import Box from "@mui/material/Box";
-import Chip from "@mui/material/Chip";
+import Table from '@mui/material/Table';
+import TableBody from '@mui/material/TableBody';
+import TableCell from '@mui/material/TableCell';
+import TableHead from '@mui/material/TableHead';
+import TableRow from '@mui/material/TableRow';
+import Paper from '@mui/material/Paper';
 
-export const MailChip = (mails: string[]) => {
-    // A set of mail addresses put into small bubbles
-    const style = {
-        display: "flex",
-        listStyle: "none",
-        padding: 0,
-        margin: 0,
-        backgroundColor: "white",
-        borderRadius: "5px",
-        border: "1px solid #ced4da",
-        boxShadow: "0 0 0 0.2rem rgba(0,123,255,.25)",
-    };
 
-    const chipStyle = {
-        margin: "5px",
-    };
+export const MailChip = ({mails}: {mails: string[]}) => {
+    const rows = mails.map((mail, index) => {
+        return {
+            id: index,
+            email: mail
+        }
+    });
 
     return (
-        <Box sx={{ width: 500, maxWidth: 500, bgcolor: "background.paper" }}>
-            <ul style={style}>
-                {mails.map((data) => {
-                    return (
-                        <li key={data}>
-                            <Chip label={data} style={chipStyle} />
-                        </li>
-                    );
-                })}
-            </ul>
-        </Box>
+        <TableContainer component={Paper}>
+            <Table aria-label="simple table">
+                <TableHead>
+                    <TableRow>
+                        <TableCell>Email</TableCell>
+                    </TableRow>
+                </TableHead>
+                <TableBody>
+                    {rows.map((row) => (
+                        <TableRow
+                            key={row.id}
+                            sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                        >
+                            <TableCell component="th" scope="row">
+                                {row.email}
+                            </TableCell>
+                        </TableRow>
+                    ))}
+                </TableBody>
+            </Table>
+        </TableContainer>
     );
 }

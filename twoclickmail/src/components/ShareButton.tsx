@@ -3,28 +3,15 @@
 import React from 'react';
 import copy from 'copy-to-clipboard';
 
-import Button from '@mui/material/Button';
-import Box from '@mui/material/Box';
+import { Fab } from '@mui/material';
+import TwitterIcon from '@mui/icons-material/Twitter';
+import WhatsappIcon from '@mui/icons-material/WhatsApp';
+import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-    faTwitter,
-    faWhatsapp,
-} from "@fortawesome/free-brands-svg-icons";
-
-import {
-    faCopy
-} from "@fortawesome/free-solid-svg-icons";
+import Grid from '@mui/material/Grid';
 
 
-
-interface ShareButtonProps {
-    url: string;
-}
-
-
-const ShareButton: React.FC<ShareButtonProps> = ({ url }) => {
-
+export const ShareButtonGroup = ({ url }: { url: string }) => {
     const handleTwitterShare = () => {
         const text = encodeURIComponent('Check out this amazing website:');
         const twitterUrl = `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}`;
@@ -37,24 +24,28 @@ const ShareButton: React.FC<ShareButtonProps> = ({ url }) => {
         window.open(whatsappUrl, '_blank');
     };
 
-    const handleCopyLink = () => {
+    const handleLinkShare = () => {
         copy(url);
     };
 
     return (
-        <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button onClick={handleTwitterShare} variant="contained" color="primary">
-                <FontAwesomeIcon icon={faTwitter} size='2xl' />
-            </Button>
-            <Button onClick={handleWhatsAppShare} variant="contained" color="primary">
-                <FontAwesomeIcon icon={faWhatsapp} size='2xl'/>
-            </Button>
-            <Button onClick={handleCopyLink} variant="contained" color="primary">
-                <FontAwesomeIcon icon={faCopy} size='2xl'/>
-            </Button>
-        </Box>
+        <Grid container spacing={2} rowSpacing={2}>
+            <Grid item xs={4} sm={4} md={12}>
+                <Fab color="primary" onClick={handleTwitterShare}>
+                    <TwitterIcon />
+                </Fab>
+            </Grid>
+            <Grid item xs={4} sm={4} md={12}>
+                <Fab color="primary" onClick={handleWhatsAppShare}>
+                    <WhatsappIcon />
+                </Fab>
+            </Grid>
+            <Grid item xs={4} sm={4} md={12}>
+                <Fab color="primary" onClick={handleLinkShare}>
+                    <ContentCopyIcon />
+                </Fab>
+            </Grid>
+        </Grid>
     );
-};
-
-export default ShareButton;
+}
 

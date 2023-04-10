@@ -10,10 +10,8 @@ import { Container } from "@mui/system";
 import Layout from "@/components/layout";
 import { Box } from "@mui/material";
 
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import {
-  faLink,
-} from "@fortawesome/free-solid-svg-icons";
+import LaunchIcon from '@mui/icons-material/Launch';
+
 import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 
 
@@ -74,11 +72,11 @@ const Profile: React.FC = ({profile}: InferGetServerSidePropsType<typeof getServ
               </TableHead>
               <TableBody>
                 {profile.emails.map((mail: any) => (
-                  <TableRow key={mail._id["$oid"]}>
+                  <TableRow key={mail._id}>
                     <TableCell>{mail.data.to}</TableCell>
                     <TableCell>{mail.data.subject}</TableCell>
-                    <TableCell><Link href={`/email?type=EmailById&value=${mail._id["$oid"]}`}>
-                      <FontAwesomeIcon icon={faLink} />
+                    <TableCell><Link href={`/email?value=${mail._id}`}>
+                      <LaunchIcon />
                   </Link></TableCell>
                   </TableRow>
                 ))}

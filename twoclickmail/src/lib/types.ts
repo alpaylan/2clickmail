@@ -21,11 +21,7 @@ export interface User {
     name: string;
     email: string;
 };
-
-export type EmailRequestType = 'name' | 'id';
-
 export interface EmailRequest {
-    type: EmailRequestType;
     value: string;
 }
 
