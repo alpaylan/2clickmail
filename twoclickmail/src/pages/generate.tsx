@@ -26,8 +26,16 @@ import { ButtonGroup } from "@mui/material";
 import { EmailData } from "@/lib/types";
 import { EmailMetadata } from "./email";
 
+type MailBoxProps = {
+  name: string;
+  emails: string[];
+  setEmails: (emails: string[]) => void;
+  input: string;
+  setInput: (input: string) => void;
+};
 
-const MailBox = ({ name, emails, setEmails, input, setInput }) => {
+
+const MailBox = ({ name, emails, setEmails, input, setInput }: MailBoxProps) => {
   return (<Autocomplete
     multiple
     freeSolo
@@ -40,8 +48,7 @@ const MailBox = ({ name, emails, setEmails, input, setInput }) => {
     inputValue={input}
     onChange={(_, value) => {
       if (value.length > 0) {
-
-        const newValues = value.pop().split(/,| |;/).filter((v: string) => v !== "");
+        const newValues = (value.pop() as string).split(/,| |;/).filter((v: string) => v !== "");
 
         const invalidValues = [];
 
