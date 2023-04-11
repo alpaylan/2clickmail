@@ -13,7 +13,7 @@ import { Container } from "@mui/system";
 
 // Local Imports
 import { fetchEmail } from "@/lib/requests/data";
-import { EmailData, EmailRequest } from "@/lib/types";
+import { EmailData, EmailObject, EmailRequest } from "@/lib/types";
 import { generateMailto } from "@/lib/common";
 import { MailEditForm } from "./generate";
 // Local Components
@@ -67,7 +67,7 @@ const OutlinedTextDisplay = ({ label, text, multiline = false }: { label: string
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-    const { value } = context.query;
+    const { value, direct } = context.query;
     const emailObject = await fetchEmail({ value } as EmailRequest);
     if (!emailObject) {
         return {
@@ -77,6 +77,16 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
             },
         }
     }
+
+    if (direct) {
+        return {
+            redirect: {
+                destination: generateMailto(emailObject.data),
+                permanent: false,
+            },
+        }
+    }
+
     const loggedIn = !!context.req.cookies.token;
     return {
         props: { loggedIn, emailObject, value },
