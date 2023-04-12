@@ -10,7 +10,7 @@
 
 ## Server
 
-- [ ] Start encrypting passwords
+- [x] Start encrypting passwords
 - [ ] Rework email post
 - [ ] Manage environment variables
 

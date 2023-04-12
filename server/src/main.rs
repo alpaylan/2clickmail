@@ -22,6 +22,8 @@ use tracing::{info, debug, error, warn, trace, instrument, span, Level};
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
 
+use pwhash::bcrypt;
+
 static SECRET_KEY : &'static str = std::env!("SECRET_KEY");
 static MONGO_URL : &'static str = std::env!("MONGO_URL");
 
@@ -164,7 +166,8 @@ async fn login(
 
     let user = user.unwrap();
 
-    if user.password != payload.password {
+
+    if !bcrypt::verify(payload.password, &user.password) {
         return (StatusCode::BAD_REQUEST, Json(LoginResponse::Failure("Wrong password".to_string())));
     }
 
@@ -207,7 +210,9 @@ async fn register(
         return (StatusCode::BAD_REQUEST, Json(RegisterResponse::Failure("User already exists".to_string())));
     }
 
-    let user = User { _id: Uid::new(), usermail: payload.usermail.clone(), password: payload.password.clone(), username: None };
+    let encrypted_password = bcrypt::hash(payload.password).unwrap();
+
+    let user = User { _id: Uid::new(), usermail: payload.usermail, password: encrypted_password, username: None };
     let uid = user._id.clone();
     users.insert_one(user, None).await.unwrap();
 
