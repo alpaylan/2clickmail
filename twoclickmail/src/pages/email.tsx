@@ -207,7 +207,7 @@ const MailViewer = ({ emailData, metadata }: { emailData: EmailData, metadata: E
                                 </Button>
                             </Link>
                         </Grid>
-                        <Grid item xs={4} sm={6} md={2}>
+                        {/* <Grid item xs={4} sm={6} md={2}>
                             <Button
                                 variant="contained"
                                 color="primary"
@@ -260,7 +260,7 @@ const MailViewer = ({ emailData, metadata }: { emailData: EmailData, metadata: E
                                 </Box>
                             </Modal>
 
-                        </Grid>
+                        </Grid> */}
                         <Grid item xs={4} sm={6} md={2}>
                             <Button
                                 variant="contained"
