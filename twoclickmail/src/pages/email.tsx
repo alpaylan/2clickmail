@@ -6,41 +6,32 @@ import { GetServerSideProps, InferGetServerSidePropsType } from "next";
 import { useRouter } from "next/router";
 
 // Material UI Imports
-import { Button, Fab, IconButton, Modal, Paper, TextField, Typography } from "@mui/material";
+import { Button, Paper } from "@mui/material";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
 import { Container } from "@mui/system";
-
-// Local Imports
-import { fetchEmail } from "@/lib/requests/data";
-import { EmailData, EmailObject, EmailRequest } from "@/lib/types";
-import { generateMailto } from "@/lib/common";
-import { MailEditForm } from "./generate";
-// Local Components
-import Layout from "@/components/layout";
-import { ShareButtonGroup } from "@/components/ShareButton";
-import { MailChip } from "@/components/MailChip";
-
+import { FormControl, InputLabel, OutlinedInput } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SendIcon from '@mui/icons-material/Send';
-import InboxIcon from '@mui/icons-material/Inbox';
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import ListItemButton from '@mui/material/ListItemButton';
 import ListItemIcon from '@mui/material/ListItemIcon';
 import ListItemText from '@mui/material/ListItemText';
-
 import Grid from '@mui/material/Grid';
 import DraftIcon from '@mui/icons-material/Drafts';
 import MailIcon from '@mui/icons-material/Mail';
-
-import TwitterIcon from '@mui/icons-material/Twitter';
-import WhatsappIcon from '@mui/icons-material/WhatsApp';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
-import CloseIcon from '@mui/icons-material/Close';
+import SaveIcon from '@mui/icons-material/Save';
 
-import { FormControl, InputLabel, OutlinedInput } from '@mui/material';
-import { generate } from "@/lib/requests/data";
+// Local Imports
+import { fetchEmail, fetchProfile, postMail } from "@/lib/requests/data";
+import { EmailData, EmailGetRequest, EmailIncrementSentCountRequest } from "@/lib/types";
+import { generateMailto } from "@/lib/common";
+// Local Components
+import Layout from "@/components/layout";
+import { ShareButtonGroup } from "@/components/ShareButton";
+import { MailChip } from "@/components/MailChip";
 
 export type EmailMetadata = {
     value: string,
@@ -50,17 +41,18 @@ export type EmailMetadata = {
 }
 
 
-const OutlinedTextDisplay = ({ label, text, multiline = false }: { label: string, text: string, multiline?: boolean }) => {
+const OutlinedTextDisplay = ({ label, text, setText, multiline = false, editMode }: { label: string, text: string, setText: (e: string) => void, multiline?: boolean, editMode: boolean }) => {
     return (
         <FormControl variant="outlined" sx={{ width: '100%' }}>
             <InputLabel htmlFor="outlined-text-display">{label}</InputLabel>
             <OutlinedInput
                 id="outlined-text-display"
                 value={text}
-                inputProps={{ readOnly: true, tabIndex: -1 }}
+                inputProps={{ readOnly: !editMode, tabIndex: -1 }}
                 multiline={multiline}
                 fullWidth
                 label={label}
+                onChange={(e) => { setText(e.target.value) }}
             />
         </FormControl>
     );
@@ -68,7 +60,7 @@ const OutlinedTextDisplay = ({ label, text, multiline = false }: { label: string
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
     const { value, direct } = context.query;
-    const emailObject = await fetchEmail({ value } as EmailRequest);
+    const emailObject = await fetchEmail({ value } as EmailGetRequest);
     if (!emailObject) {
         return {
             redirect: {
@@ -79,6 +71,7 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
 
     if (direct) {
+        await postMail({ mode: 'increment_sent_count', id: value } as EmailIncrementSentCountRequest);
         return {
             redirect: {
                 destination: generateMailto(emailObject.data),
@@ -88,26 +81,30 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
     }
 
     const loggedIn = !!context.req.cookies.token;
+
+    let mailOwnedByUser = false;
+
+    if (loggedIn) {
+        const profile = await fetchProfile(context.req.cookies.token);
+        if (!profile) {
+            return {
+                redirect: {
+                    destination: '/',
+                    permanent: false,
+                },
+            }
+        }
+
+        const emailIds = profile.emails.map((email) => email._id);
+        if (emailIds.includes(value as string)) {
+            mailOwnedByUser = true;
+        }
+    }
+
     return {
-        props: { loggedIn, emailObject, value },
+        props: { loggedIn, emailObject, value, mailOwnedByUser },
     }
 }
-
-
-
-const EmailList = ({ emails }: { emails: string[] }) => {
-    return (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, margin: '10px' }}>
-            {emails.map((email: string) => {
-                return (
-                    <Button variant="outlined" size="small" key={email}>
-                        {email}
-                    </Button>
-                );
-            })}
-        </Box>
-    );
-};
 
 enum EmailGroup {
     to = 'to',
@@ -117,14 +114,56 @@ enum EmailGroup {
 
 
 
-const MailViewer = ({ emailData, metadata }: { emailData: EmailData, metadata: EmailMetadata }) => {
+const MailViewer = ({ loggedIn, mailOwnedByUser, emailData, metadata }: { loggedIn: boolean, mailOwnedByUser: boolean, emailData: EmailData, metadata: EmailMetadata }) => {
     const [selectedEmailGroup, setSelectedEmailGroup] = React.useState(EmailGroup.to);
-    const [editWindowOpen, setEditWindowOpen] = React.useState(false);
+    const [editMode, setEditMode] = React.useState(false);
     const router = useRouter();
     const mailto = generateMailto(emailData);
 
-    const handleReuseEmail = async (emailData: EmailData) => {
-        const uniqueId = await generate(emailData, null);
+
+    const [to, setTo] = React.useState(emailData.to);
+    const [cc, setCc] = React.useState(emailData.cc);
+    const [bcc, setBcc] = React.useState(emailData.bcc);
+    const [subject, setSubject] = React.useState(emailData.subject);
+    const [body, setBody] = React.useState(emailData.body);
+
+    const emailGroups = {
+        [EmailGroup.to]: { mails: to ? to : emailData.to, setMails: setTo },
+        [EmailGroup.cc]: { mails: cc ? cc : emailData.cc, setMails: setCc },
+        [EmailGroup.bcc]: { mails: bcc ? bcc : emailData.bcc, setMails: setBcc },
+    }
+
+    const clickEditButton = async () => {
+        if (mailOwnedByUser) {
+            if (editMode) {
+                // Save the changes
+                const newEmailData = {
+                    to: to,
+                    cc: cc,
+                    bcc: bcc,
+                    subject: subject,
+                    body: body,
+                }
+                const res = await postMail({ mode: 'update', id: metadata.value, email: newEmailData });
+                if (!res) {
+                    router.reload();
+                }
+
+            }
+            setEditMode(!editMode);
+        } else {
+            alert("Please login to edit the mail");
+        }
+    }
+
+
+    const handleReuseEmail = async () => {
+        if (!loggedIn) {
+            alert("Please login to reuse the mail");
+            return;
+        }
+
+        const uniqueId = await postMail({ mode: 'generate', email: emailData });
 
         if (uniqueId) {
             router.push(
@@ -177,21 +216,25 @@ const MailViewer = ({ emailData, metadata }: { emailData: EmailData, metadata: E
                             </List>
                         </Grid>
                         <Grid item xs={12} sm={6} md={4}>
-                            <MailChip mails={emailData[selectedEmailGroup]} />
+                            <MailChip mailState={emailGroups[selectedEmailGroup]} editMode={editMode} key={selectedEmailGroup} />
                         </Grid>
                         <Grid item xs={12} sm={6} md={5}>
                             <Grid container spacing={2} rowSpacing={2}>
                                 <Grid item xs={12} sm={12}>
                                     <OutlinedTextDisplay
                                         label="Subject"
-                                        text={emailData.subject}
+                                        text={subject}
+                                        setText={setSubject}
+                                        editMode={editMode}
                                     />
                                 </Grid>
                                 <Grid item xs={12} sm={12}>
                                     <OutlinedTextDisplay
                                         label="Body"
-                                        text={emailData.body}
+                                        text={body}
+                                        setText={setBody}
                                         multiline={true}
+                                        editMode={editMode}
                                     />
                                 </Grid>
                             </Grid>
@@ -200,75 +243,28 @@ const MailViewer = ({ emailData, metadata }: { emailData: EmailData, metadata: E
                             <ShareButtonGroup url={`${process.env.PUBLIC_URL}/email?value=${metadata.value}`} />
                         </Grid>
 
-                        <Grid item xs={4} sm={6} md={2}>
+                        <Grid item xs={4} sm={4} md={2}>
                             <Link href={mailto} target="_blank" rel="noopener noreferrer">
-                                <Button variant="contained" color="primary" startIcon={<SendIcon />}>
+                                <Button variant="contained" color="primary" startIcon={<SendIcon />} onClick={() => postMail({ mode: 'increment_sent_count', id: metadata.value } as EmailIncrementSentCountRequest)}>
                                     Send
                                 </Button>
                             </Link>
                         </Grid>
-                        {/* <Grid item xs={4} sm={6} md={2}>
+                        <Grid item xs={4} sm={4} md={2}>
                             <Button
                                 variant="contained"
-                                color="primary"
-                                startIcon={<EditIcon />}
-                                onClick={() => setEditWindowOpen(true)}>
-                                Edit
+                                color={mailOwnedByUser ? "primary" : "grey"}
+                                startIcon={editMode ? <SaveIcon /> : <EditIcon />}
+                                onClick={clickEditButton}>
+                                {editMode ? "Save" : "Edit"}
                             </Button>
-                            <Modal
-                                open={editWindowOpen}
-                                onClose={() => setEditWindowOpen(false)}
-                                aria-labelledby="modal-modal-title"
-                                aria-describedby="modal-modal-description"
-                            >
-                                <Box sx={{
-                                    position: 'absolute' as 'absolute',
-                                    top: '50%',
-                                    left: '50%',
-                                    transform: 'translate(-50%, -50%)',
-                                    width: '80%',
-                                    bgcolor: 'background.paper',
-                                    border: '2px solid #000',
-                                    boxShadow: 24,
-                                    p: 4,
-                                }}>
-                                    <Grid container spacing={2} rowSpacing={4}>
-                                        <Grid item xs={12} sm={12} md={12}>
-                                            <IconButton
-                                                edge="end"
-                                                onClick={() => setEditWindowOpen(false)}
-                                                aria-label="close"
-                                                sx={{
-                                                    position: 'absolute',
-                                                    top: 8,
-                                                    right: 8,
-                                                    zIndex: 1,
-                                                    margin: '10px',
-                                                }}
-                                            >
-                                                <CloseIcon />
-                                            </IconButton>
-                                        </Grid>
-                                        <Grid item xs={12} sm={12} md={12}>
-                                            <MailEditForm
-                                                emailData={emailData}
-                                                id={metadata.value}
-                                                mode='edit'
-                                            />
-                                        </Grid>
-                                    </Grid>
-                                </Box>
-                            </Modal>
-
-                        </Grid> */}
-                        <Grid item xs={4} sm={6} md={2}>
+                        </Grid>
+                        <Grid item xs={4} sm={4} md={2}>
                             <Button
                                 variant="contained"
-                                color="primary"
+                                color={loggedIn ? "primary" : "grey"}
                                 startIcon={<ContentCopyIcon />}
-                                onClick={
-                                    () => handleReuseEmail(emailData)
-                                }>
+                                onClick={handleReuseEmail}>
                                 Reuse
                             </Button>
                         </Grid>
@@ -282,11 +278,11 @@ const MailViewer = ({ emailData, metadata }: { emailData: EmailData, metadata: E
 
 
 
-const Email = ({ loggedIn, emailObject, value }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
+const Email = ({ loggedIn, emailObject, value, mailOwnedByUser }: InferGetServerSidePropsType<typeof getServerSideProps>) => {
     const metadata: EmailMetadata = { value };
     return (
         <Layout>
-            <MailViewer emailData={emailObject.data} metadata={metadata} />
+            <MailViewer loggedIn={loggedIn} mailOwnedByUser={mailOwnedByUser} emailData={emailObject.data} metadata={metadata} />
         </Layout>
     )
 }

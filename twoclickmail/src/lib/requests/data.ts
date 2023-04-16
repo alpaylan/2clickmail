@@ -1,9 +1,8 @@
-import { EmailObject, EmailData, EmailRequest, ProfileData } from '../types';
+import { EmailObject, EmailData, EmailPostRequest, EmailGetRequest, ProfileData } from '../types';
 import Cookies from 'js-cookie';
 
-export async function generate(
-  email: EmailData,
-  id: string | null
+export async function postMail(
+  req: EmailPostRequest
 ): Promise<string | null> {
   try {
     console.log('Generating email website');
@@ -13,7 +12,7 @@ export async function generate(
       method: 'POST',
       mode: 'cors',
       headers: headers,
-      body: JSON.stringify({ name: null, email: email, id: id })
+      body: JSON.stringify(req)
     });
     if (response.ok) {
       const data = await response.json();
@@ -30,7 +29,7 @@ export async function generate(
 }
 
 export async function fetchEmail(
-  req: EmailRequest
+  req: EmailGetRequest
 ): Promise<EmailObject | null> {
   try {
     const response = await fetch(`${process.env.SERVER_URL}/email?$value=${req.value}`, { 
@@ -51,8 +50,11 @@ export async function fetchEmail(
   }
 }
 
-export async function fetchProfile(token: String): Promise<ProfileData | null> {
+export async function fetchProfile(token?: String): Promise<ProfileData | null> {
   try {
+    if (!token) {
+      token = Cookies.get('token');
+    }
     console.log('Fetching profile data');
     
     const response = await fetch(`${process.env.SERVER_URL}/profile`, {

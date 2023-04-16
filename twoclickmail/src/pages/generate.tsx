@@ -11,21 +11,18 @@ import Button from "@mui/material/Button";
 import Container from "@mui/material/Container";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import FileUploadIcon from '@mui/icons-material/FileUpload';
-import { styled } from "@mui/system";
 import Grid from "@mui/material/Grid";
+import { ButtonGroup } from "@mui/material";
+import { useMediaQuery } from "@mui/material";
 // External Imports
 import * as EmailValidator from "email-validator";
 
 // Local Imports
-import { generate } from "@/lib/requests/data";
+import { postMail } from "@/lib/requests/data";
+import { EmailData, EmailPostRequest, EmailGenerateRequest, EmailUpdateRequest } from "@/lib/types";
 
 // Local Components
 import Layout from "@/components/layout";
-import { ButtonGroup } from "@mui/material";
-import { EmailData } from "@/lib/types";
-import { EmailMetadata } from "./email";
-import { useMediaQuery } from "@mui/material";
 
 type MailBoxProps = {
   name: string;
@@ -232,7 +229,16 @@ export const MailEditForm = ({ emailData = { to: [], cc: [], bcc: [], subject: '
 
     console.log(emailData);
 
-    const uniqueId = await generate(emailData, id);
+    const req: EmailPostRequest = (mode === 'generate' ? {
+      mode: 'generate',
+      email: emailData,
+    } as EmailGenerateRequest : {
+      mode: 'update',
+      email: emailData,
+      id: id,
+    } as EmailUpdateRequest);
+
+    const uniqueId = await postMail(req);
 
 
     if (uniqueId) {
