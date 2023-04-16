@@ -9,7 +9,7 @@ import { useRouter } from "next/router";
 import { Button, Paper } from "@mui/material";
 import Box from "@mui/material/Box";
 import Link from "@mui/material/Link";
-import { Container } from "@mui/system";
+import { Container, ThemeProvider } from "@mui/system";
 import { FormControl, InputLabel, OutlinedInput } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import SendIcon from '@mui/icons-material/Send';
@@ -23,7 +23,7 @@ import DraftIcon from '@mui/icons-material/Drafts';
 import MailIcon from '@mui/icons-material/Mail';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import SaveIcon from '@mui/icons-material/Save';
-
+import { createTheme } from '@mui/material/styles';
 // Local Imports
 import { fetchEmail, fetchProfile, postMail } from "@/lib/requests/data";
 import { EmailData, EmailGetRequest, EmailIncrementSentCountRequest } from "@/lib/types";
@@ -40,6 +40,17 @@ export type EmailMetadata = {
     createdBy?: string,
 }
 
+
+const theme = createTheme({
+    palette: {
+        primary: {
+            main: '#1976d2',
+        },
+        secondary: {
+            main: '#f5f5f5',
+        },
+    }
+});
 
 const OutlinedTextDisplay = ({ label, text, setText, multiline = false, editMode }: { label: string, text: string, setText: (e: string) => void, multiline?: boolean, editMode: boolean }) => {
     return (
@@ -152,7 +163,11 @@ const MailViewer = ({ loggedIn, mailOwnedByUser, emailData, metadata }: { logged
             }
             setEditMode(!editMode);
         } else {
-            alert("Please login to edit the mail");
+            if (!loggedIn) {
+                alert("Please login to edit the mail");
+            } else {
+                alert("You can only edit mails that you have created");
+            }
         }
     }
 
@@ -251,22 +266,26 @@ const MailViewer = ({ loggedIn, mailOwnedByUser, emailData, metadata }: { logged
                             </Link>
                         </Grid>
                         <Grid item xs={4} sm={4} md={2}>
-                            <Button
-                                variant="contained"
-                                color={mailOwnedByUser ? "primary" : "grey"}
-                                startIcon={editMode ? <SaveIcon /> : <EditIcon />}
-                                onClick={clickEditButton}>
-                                {editMode ? "Save" : "Edit"}
-                            </Button>
+                            <ThemeProvider theme={theme}>
+                                <Button
+                                    variant="contained"
+                                    color={mailOwnedByUser ? "primary" : "secondary"}
+                                    startIcon={editMode ? <SaveIcon /> : <EditIcon />}
+                                    onClick={clickEditButton}>
+                                    {editMode ? "Save" : "Edit"}
+                                </Button>
+                            </ThemeProvider>
                         </Grid>
                         <Grid item xs={4} sm={4} md={2}>
-                            <Button
-                                variant="contained"
-                                color={loggedIn ? "primary" : "grey"}
-                                startIcon={<ContentCopyIcon />}
-                                onClick={handleReuseEmail}>
-                                Reuse
-                            </Button>
+                            <ThemeProvider theme={theme}>
+                                <Button
+                                    variant="contained"
+                                    color={loggedIn ? "primary" : "secondary"}
+                                    startIcon={<ContentCopyIcon />}
+                                    onClick={handleReuseEmail}>
+                                    Reuse
+                                </Button>
+                            </ThemeProvider>
                         </Grid>
                     </Grid>
                 </Paper>
