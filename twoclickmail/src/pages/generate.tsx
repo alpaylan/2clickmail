@@ -340,7 +340,7 @@ const Generate: React.FC = () => {
       <Container maxWidth="sm">
         <Box sx={{ my: 4 }}>
           <Typography variant="h4" gutterBottom style={{ color: '#000000' }}>
-            Mass Mailing System
+            New Email
           </Typography>
           <MailEditForm mode='generate' />
         </Box>
