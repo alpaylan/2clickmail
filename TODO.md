@@ -11,13 +11,13 @@
 ## Server
 
 - [x] Start encrypting passwords
-- [ ] Rework email post
+- [x] Rework email post
 - [ ] Manage environment variables
 
 ## Client
 
 - [ ] Merge register and login into one page
-- [ ] Rework the new email page
+- [x] Rework the new email page
 - [ ] Rework the top navbar
 - [ ] Make home button useful
 - [ ] Rework mail edit, don't use the modal
