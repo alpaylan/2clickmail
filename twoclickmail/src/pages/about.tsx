@@ -24,7 +24,7 @@ const About = () => {
                                     This is a simple website that allows you to create, view and share email templates.
                                 </Typography>
                                 <Typography variant="body1" gutterBottom>
-                                    This project is open source and you can find the source code on <Link href="github.com/alpaylan/2clickmail"><GitHubIcon fontSize='medium'/> </Link>.
+                                    This project is open source and you can find the source code on <Link href="https://github.com/alpaylan/2clickmail"><GitHubIcon fontSize='medium'/> </Link>.
                                 </Typography>
                             </Paper>
                         </Grid>
