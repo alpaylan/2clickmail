@@ -4,11 +4,19 @@ pub mod auth;
 pub mod models;
 pub mod routes;
 
-pub static SECRET_KEY: &str = std::env!("SECRET_KEY");
-pub static MONGO_URL: &str = std::env!("MONGO_URL");
+pub static SECRET_KEY: LazyLock<String> = LazyLock::new(|| {
+    std::env::var("SECRET_KEY").unwrap_or_else(|_| panic!("SECRET_KEY must be set"))
+});
+pub static MONGO_URL: LazyLock<String> = LazyLock::new(|| {
+    std::env::var("MONGO_URL").unwrap_or_else(|_| panic!("SECRET_KEY must be set"))
+});
 
-pub static USER_SEED: &str = std::env!("USER_SEED");
-pub static EMAIL_SEED: &str = std::env!("EMAIL_SEED");
+pub static USER_SEED: LazyLock<String> = LazyLock::new(|| {
+    std::env::var("USER_SEED").unwrap_or_else(|_| panic!("SECRET_KEY must be set"))
+});
+pub static EMAIL_SEED: LazyLock<String> = LazyLock::new(|| {
+    std::env::var("EMAIL_SEED").unwrap_or_else(|_| panic!("SECRET_KEY must be set"))
+});
 
 pub static USER_GEN: LazyLock<block_id::BlockId<char>> = LazyLock::new(|| {
     block_id::BlockId::new(

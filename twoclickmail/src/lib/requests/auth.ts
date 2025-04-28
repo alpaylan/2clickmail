@@ -16,13 +16,18 @@ export async function loginUser(email: string, password: string): Promise<boolea
 
     if (response.status === 200) {
       console.log('Logged in successfully');
-      const data = await response.json();
-      Cookies.set('token', data["Success"]);
+      const data = await response.text();
+      Cookies.set('token', data);
       return true;
-    } else {
-      console.log('Failed to log in');
+    }
+    if (response.status === 401) {
+      console.log('Invalid email or password');
       return false;
     }
+
+    console.log('Failed to log in, status code:', response.status);
+    return false;
+
   } catch (error) {
     console.error('An error occurred:', error);
     return false;
@@ -56,7 +61,7 @@ export async function registerUser(email: string, password: string): Promise<boo
         password: password,
       })
     });
-    if (response.status === 201) {
+    if (response.status === 200) {
       console.log('Registered successfully');
       const data = await response.json();
       Cookies.set('token', data["Success"]);

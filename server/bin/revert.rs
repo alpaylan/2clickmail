@@ -1,13 +1,12 @@
 use bson::doc;
 
-use futures_util::TryStreamExt;
-use twoclickmail::{models::email::{Email, Email2}, MONGO_URL};
+use twoclickmail::{models::email::Email, MONGO_URL};
 
 #[tokio::main]
 async fn main() {
     // Initialize the MongoDB client
     let client = mongodb::Client::with_options(
-        mongodb::options::ClientOptions::parse(MONGO_URL)
+        mongodb::options::ClientOptions::parse(MONGO_URL.as_str())
             .await
             .unwrap(),
     )

@@ -11,15 +11,15 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import Grid from '@mui/material/Grid';
 
 
-export const ShareButtonGroup = ({ url }: { url: string }) => {
+export const ShareButtonGroup = ({ subject, url }: { subject: string, url: string }) => {
     const handleTwitterShare = () => {
-        const text = encodeURIComponent('Check out this amazing website:');
+        const text = encodeURIComponent(`Check out this email campaign for ${subject}:`);
         const twitterUrl = `https://twitter.com/intent/tweet?text=${text}&url=${encodeURIComponent(url)}`;
         window.open(twitterUrl, '_blank');
     };
 
     const handleWhatsAppShare = () => {
-        const text = encodeURIComponent('Check out this amazing website:');
+        const text = encodeURIComponent(`Check out this email campaign for ${subject}:`);
         const whatsappUrl = `https://wa.me/?text=${text} ${encodeURIComponent(url)}`;
         window.open(whatsappUrl, '_blank');
     };

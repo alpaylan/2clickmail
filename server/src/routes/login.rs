@@ -23,18 +23,11 @@ pub struct Request {
 }
 
 pub type AccessToken = String;
-pub type ErrorMessage = String;
-
-#[derive(Serialize)]
-pub enum Response {
-    Success(AccessToken),
-    Failure(ErrorMessage),
-}
 
 pub async fn login(
     Json(payload): Json<Request>,
     Extension(db): Extension<Arc<Client>>,
-) -> (StatusCode, Json<Response>) {
+) -> Result<AccessToken, StatusCode> {
     // insert your application logic here
 
     debug!("Logging in user: {}", payload.usermail);
@@ -47,19 +40,15 @@ pub async fn login(
         .unwrap();
 
     if user.is_none() {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(Response::Failure("User not found".to_string())),
-        );
+        debug!("user not found: {}", payload.usermail);
+        return Err(StatusCode::BAD_REQUEST);
     }
 
     let user = user.unwrap();
 
-    if !bcrypt::verify(payload.password, &user.password) {
-        return (
-            StatusCode::BAD_REQUEST,
-            Json(Response::Failure("Wrong password".to_string())),
-        );
+    if !bcrypt::verify(payload.password.clone(), &user.password) {
+        debug!("wrong password {} for user: {}", payload.password, payload.usermail);
+        return Err(StatusCode::BAD_REQUEST);
     }
 
     let uid = user._id;
@@ -69,5 +58,5 @@ pub async fn login(
 
     let token = create_jwt(&claims, SECRET_KEY.to_owned().as_bytes()).unwrap();
 
-    (StatusCode::OK, Json(Response::Success(token)))
+    Ok(token)
 }

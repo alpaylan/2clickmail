@@ -33,7 +33,7 @@ async fn main() {
         .init();
 
     let db =
-        Arc::new(Client::with_options(ClientOptions::parse(MONGO_URL).await.unwrap()).unwrap());
+        Arc::new(Client::with_options(ClientOptions::parse(MONGO_URL.as_str()).await.unwrap()).unwrap());
 
     let cors = CorsLayer::new()
         .allow_origin(Any)
