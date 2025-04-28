@@ -1,10 +1,17 @@
+use std::sync::Arc;
+
+use bson::doc;
 use jsonwebtoken::{
     decode, encode, Algorithm, DecodingKey, EncodingKey, Header, TokenData, Validation,
 };
+use mongodb::Client;
 use serde::{Deserialize, Serialize};
 use tracing::debug;
 
-use crate::{models::user::Uid, SECRET_KEY};
+use crate::{
+    models::user::{Uid, User},
+    SECRET_KEY,
+};
 
 pub fn create_jwt<T: Serialize>(
     claims: &T,
@@ -39,4 +46,23 @@ pub async fn auth_session(token: String) -> Option<TokenData<Claims>> {
     }
 
     Some(token_message.unwrap())
+}
+
+pub async fn auth_user(token: String, db: Arc<Client>) -> Result<User, String> {
+    let token_data = auth_session(token).await;
+
+    let token_data = token_data.ok_or("Token is invalid")?;
+
+    let users = db.database("twoclickmail").collection("users");
+
+    let user: Option<User> = users
+        .find_one(doc! {"_id": token_data.claims.uid}, None)
+        .await
+        .unwrap();
+
+    let user = user.ok_or("User not found")?;
+
+    debug!("User found: {:?}", user);
+
+    Ok(user)
 }

@@ -20,7 +20,17 @@ jsonwebtoken = "8.3.0"
 tower-http = { version = "0.4.0", features = ["cors", "trace"] }
 futures-util = "0.3"
 pwhash = "1.0.0"
+block-id = "0.2.1"
 
 [[bin]]
 name = "twoclickmail"
-path = "src/main.rs"
+path = "bin/main.rs"
+
+[[bin]]
+name = "migrate"
+path = "bin/migrate.rs"
+
+[[bin]]
+name = "revert"
+path = "bin/revert.rs"
+

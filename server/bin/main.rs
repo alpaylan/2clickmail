@@ -1,10 +1,16 @@
+extern crate twoclickmail;
+
 use axum::{
     http::StatusCode,
     routing::{get, post},
     AddExtensionLayer, Router,
 };
-use routes::{email, login, profile, register};
+
 use std::net::SocketAddr;
+use twoclickmail::{
+    routes::{email, login, profile, register},
+    MONGO_URL,
+};
 
 use mongodb::{options::ClientOptions, Client};
 use tower_http::cors::{Any, CorsLayer};
@@ -14,13 +20,6 @@ use std::sync::Arc;
 
 use tracing_subscriber::layer::SubscriberExt;
 use tracing_subscriber::util::SubscriberInitExt;
-
-static SECRET_KEY: &str = std::env!("SECRET_KEY");
-static MONGO_URL: &str = std::env!("MONGO_URL");
-
-mod auth;
-mod models;
-mod routes;
 
 #[tokio::main]
 async fn main() {

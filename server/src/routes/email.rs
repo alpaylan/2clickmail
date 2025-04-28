@@ -6,15 +6,18 @@ use axum::{
 };
 use bson::{doc, Document};
 use hyper::{HeaderMap, StatusCode};
-use mongodb::{options::UpdateOptions, Client, Collection};
+use mongodb::{
+    options::{FindOneOptions, UpdateOptions},
+    Client, Collection,
+};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, info};
+use tracing::{debug, error, info};
 
 use crate::{
-    auth::auth_session,
+    auth::auth_user,
     models::{
-        email::{Email, EmailData},
-        user::{Uid, User},
+        email::{Email2, EmailData},
+        user::Uid,
     },
 };
 
@@ -42,99 +45,109 @@ pub async fn send(
     headers: HeaderMap,
     body: String, // Json(payload): Json<GenerateRequest>,
     Extension(db): Extension<Arc<Client>>,
-) -> (StatusCode, Json<Option<Uid>>) {
+) -> Result<Json<Option<Uid>>, StatusCode> {
     let token = headers.get("Authorization");
     debug!("Token: {:?}", token);
     debug!("Body: {:?}", body);
     let payload: Request = serde_json::from_str(&body).unwrap();
 
-    let user_id = match token {
-        Some(token) => {
-            let token = token.to_str().unwrap().to_string();
-            let token_data = auth_session(token).await;
-
-            if token_data.is_none() {
-                debug!("Token invalid");
-                return (StatusCode::BAD_REQUEST, Json(None));
-            }
-
-            let token_data = token_data.unwrap();
-
-            let users = db.database("twoclickmail").collection("users");
-
-            let user: Option<User> = users
-                .find_one(doc! {"_id": token_data.claims.uid}, None)
-                .await
-                .unwrap();
-
-            if user.is_none() {
-                debug!("User not found");
-                return (StatusCode::BAD_REQUEST, Json(None));
-            }
-
-            let user = user.unwrap();
-
-            debug!("User found: {:?}", user);
-
-            Some(user._id)
-        }
+    let user = match token {
+        Some(token) => Some(
+            auth_user(
+                token
+                    .to_str()
+                    .map_err(|_| StatusCode::UNAUTHORIZED)?
+                    .to_string(),
+                Arc::clone(&db),
+            )
+            .await
+            .map_err(|_| StatusCode::UNAUTHORIZED)?,
+        ),
         None => None,
     };
 
-    let emails: Collection<Email> = db.database("twoclickmail").collection("emails");
+    let emails: Collection<Email2> = db.database("twoclickmail").collection("emails");
 
     match payload {
         Request::GenerateMail { name, email } => {
-            let email = Email {
-                _id: Uid::new(),
+            let count = emails
+                .count_documents(None, None)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+            let email = Email2 {
+                id: Uid::new_email(count),
                 name,
-                user_id,
+                user_id: user.as_ref().map(|u| u._id.clone()),
                 data: email,
                 count: 0,
+                vid: 0,
+                anonymous: false,
+                message: None,
+                active: true,
+                deleted: false,
+                created_at: Some(chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)),
             };
-            let email_id = email._id.clone();
+
+            let email_id = email.id.clone();
             emails.insert_one(email, None).await.unwrap();
 
             info!("Email inserted");
 
-            (StatusCode::OK, Json(Some(email_id)))
+            Ok(Json(Some(email_id)))
         }
-        Request::UpdateMail { id, name: _, email } => match user_id {
-            Some(user_id) => {
-                let query = doc! {"_id": id.clone(), "user_id": user_id};
-                let update =
-                    doc! { "$set": { "data": <EmailData as Into<Document>>::into(email) } };
-                let options = Some(UpdateOptions::builder().upsert(true).build());
+        Request::UpdateMail { id, name: _, email } => {
+            let user = user.ok_or_else(|| {
+                debug!("User is required for UpdateMail or DeleteMail");
+                StatusCode::UNAUTHORIZED
+            })?;
 
-                emails.update_one(query, update, options).await.unwrap();
-
-                info!("Email updated");
-
-                (StatusCode::OK, Json(Some(id)))
-            }
-            None => (StatusCode::BAD_REQUEST, Json(None)),
-        },
-        Request::DeleteMail { id } => match user_id {
-            Some(user_id) => {
-                let query = doc! {"_id": id.clone(), "user_id": user_id};
-                emails.delete_one(query, None).await.unwrap();
-
-                info!("Email deleted");
-
-                (StatusCode::OK, Json(Some(id)))
-            }
-            None => (StatusCode::BAD_REQUEST, Json(None)),
-        },
-        Request::IncreaseSentCount { id } => {
-            let query = doc! {"_id": id.clone()};
-            let update = doc! { "$inc": { "count": 1 } };
+            let query = doc! {"id": id.clone(), "user_id": user._id};
+            let update = doc! { "$set": { "data": <EmailData as Into<Document>>::into(email) } };
             let options = Some(UpdateOptions::builder().upsert(true).build());
 
-            emails.update_one(query, update, options).await.unwrap();
+            let result = emails.update_one(query, update, options).await.unwrap();
+
+            if result.matched_count == 0 {
+                error!("email with '{}' is not found, could not update", id.0);
+                return Err(StatusCode::BAD_REQUEST);
+            }
+
+            info!("Email updated");
+
+            Ok(Json(Some(id)))
+        }
+        Request::DeleteMail { id } => {
+            let user = user.ok_or_else(|| {
+                debug!("User is required for UpdateMail or DeleteMail");
+                StatusCode::UNAUTHORIZED
+            })?;
+
+            let query = doc! {"id": id.clone(), "user_id": user._id};
+            let result = emails.delete_one(query, None).await.unwrap();
+
+            if result.deleted_count == 0 {
+                error!("email with '{}' is not found, could not delete", id.0);
+                return Err(StatusCode::BAD_REQUEST);
+            }
+
+            info!("Email deleted");
+
+            Ok(Json(Some(id)))
+        }
+        Request::IncreaseSentCount { id } => {
+            let query = doc! {"id": id.clone()};
+            let update = doc! { "$inc": { "count": 1 } };
+            let result = emails.update_one(query, update, None).await.unwrap();
+
+            if result.matched_count == 0 {
+                error!("email with '{}' is not found, could not increment count", id.0);
+                return Err(StatusCode::BAD_REQUEST);
+            }
 
             info!("Sent count increased");
 
-            (StatusCode::OK, Json(Some(id)))
+            Ok(Json(Some(id)))
         }
     }
 }
@@ -142,37 +155,28 @@ pub async fn send(
 pub async fn get(
     Query(params): Query<HashMap<String, String>>,
     Extension(db): Extension<Arc<Client>>,
-) -> (StatusCode, Json<Option<Email>>) {
+) -> Result<Json<Email2>, StatusCode> {
     debug!("Getting email: {:?}", params);
     let payload = params.get("value");
-    debug!("Getting email: {:?}", payload);
+    debug!("value: {:?}", payload);
 
-    if payload.is_none() {
-        return (StatusCode::BAD_REQUEST, Json(None));
-    }
+    let payload = payload.ok_or(StatusCode::BAD_REQUEST)?;
 
-    let payload = payload.unwrap();
+    let emails: Collection<Email2> = db.database("twoclickmail").collection("emails");
 
-    let emails: Collection<Email> = db.database("twoclickmail").collection("emails");
-    debug!(
-        "old: {:?}",
-        emails
-            .find_one(doc! { "_id": payload }, None)
-            .await
-            .unwrap()
-    );
+    debug!("querying emails: '{{ \"$or\": [{{ \"id\": \"{payload}\" }}, {{ \"name\": \"{payload}\" }}]}}'");
+
     let email = emails
         .find_one(
-            doc! { "$or": [{ "_id": payload }, { "name": payload }]},
-            None,
+            doc! { "$or": [{ "id": payload }, { "name": payload }]},
+            FindOneOptions::builder()
+                .max_time(std::time::Duration::from_secs(1))
+                .build(),
         )
         .await
         .unwrap();
 
-    debug!("Email found: {:?}", email);
+    debug!("email found: {:?}", email);
 
-    match email {
-        Some(email) => (StatusCode::OK, Json(Some(email))),
-        None => (StatusCode::BAD_REQUEST, Json(None)),
-    }
+    email.map(Json).ok_or(StatusCode::BAD_REQUEST)
 }

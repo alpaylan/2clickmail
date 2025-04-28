@@ -1,5 +1,13 @@
-# Get email
+# Create an email
 #!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+TOKEN=$(source $SCRIPT_DIR/../auth/login.sh)
+
+if [ -z "$TOKEN" ]; then
+  echo "Failed to get token"
+  exit
+fi
 
 # Extract the email
 # If an email id is provided, use it.
@@ -25,6 +33,13 @@ else
     EMAIL_ID=$(jq -r ".emails[$RANDOM_NUMBER]._id" <<< "$DATA")
 fi
 
-RESP=$(curl -s -X GET http://127.0.0.1:8080/email?value=$EMAIL_ID)
+REQUEST='{"mode": "increment_sent_count", "id": '\"$EMAIL_ID\"'}'
+echo $REQUEST
 
-echo "$RESP"
+# Post the email generation request
+RESULT=$(curl -s -X POST http://127.0.0.1:8080/email \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $TOKEN" \
+        -d "$REQUEST")
+
+echo $RESULT
