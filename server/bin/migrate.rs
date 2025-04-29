@@ -7,7 +7,7 @@ use twoclickmail::MONGO_URL;
 async fn main() {
     // Initialize the MongoDB client
     let client = mongodb::Client::with_options(
-        mongodb::options::ClientOptions::parse(MONGO_URL)
+        mongodb::options::ClientOptions::parse(MONGO_URL.as_str())
             .await
             .unwrap(),
     )

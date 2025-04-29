@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import type React from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { Container, TextField, Button, Typography, Box, Alert } from '@mui/material';
 import { loginUser } from '@/lib/requests/auth';

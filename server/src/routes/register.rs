@@ -3,7 +3,7 @@ use std::sync::Arc;
 use crate::{
     auth::{create_jwt, Claims},
     models::user::{Uid, User},
-    routes::login::{Request, Response},
+    routes::login::{Request, AccessToken},
     SECRET_KEY,
 };
 
@@ -16,7 +16,7 @@ use pwhash::bcrypt;
 pub async fn register(
     Json(payload): Json<Request>,
     Extension(db): Extension<Arc<Client>>,
-) -> Result<Json<Response>, StatusCode> {
+) -> Result<AccessToken, StatusCode> {
     // insert your application logic here
 
     tracing::debug!("Registering user: {}", payload.usermail);
@@ -43,13 +43,19 @@ pub async fn register(
 
     let user = User {
         _id: Uid::new_user(count),
-        usermail: payload.usermail,
+        usermail: payload.usermail.clone(),
         password: encrypted_password,
         username: None,
     };
 
     let uid = user._id.clone();
-    users.insert_one(user, None).await.unwrap();
+
+    tracing::debug!("inserting user with id: {}", uid.0);
+
+    users.insert_one(user, None).await.map_err(|_| {
+        tracing::error!("Failed to insert user");
+        StatusCode::INTERNAL_SERVER_ERROR
+    })?;
 
     let iat = chrono::Utc::now().timestamp() as usize;
     let exp = iat + 10000000;
@@ -57,5 +63,8 @@ pub async fn register(
 
     let token = create_jwt(&claims, SECRET_KEY.to_owned().as_bytes()).unwrap();
 
-    Ok(Json(Response::Success(token)))
+    tracing::debug!("token: {}", token);
+    tracing::debug!("user registered: {}", payload.usermail);
+
+    Ok(token)
 }

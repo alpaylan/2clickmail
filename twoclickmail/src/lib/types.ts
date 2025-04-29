@@ -8,11 +8,14 @@ export interface EmailData {
 };
 
 export interface EmailObject {
-    _id: string;
-    name: string;
-    access: 'public' | 'private';
-    count: number;
+    id: string;
+    name: string | null;
     data: EmailData;
+    message: string | null;
+    count: number;
+    active: boolean;
+    anonymous: boolean;
+    createdAt: string | null;
 };
 
 export interface EmailGenerateRequest {
