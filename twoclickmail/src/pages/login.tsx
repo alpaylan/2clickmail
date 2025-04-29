@@ -11,17 +11,11 @@ const Login: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState('');
   const router = useRouter();
 
-  // useEffect(() => {
-  //   if (isLoggedIn()) {
-  //     router.push('/profile');
-  //   }
-  // }, []);
-
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     const success = await loginUser(email, password);
-    console.log(success);
+
     if (success) {
         router.push(
           {
@@ -31,7 +25,6 @@ const Login: React.FC = () => {
     } else {
         setErrorMessage('Invalid email or password');
     }
-    
   };
 
   return (

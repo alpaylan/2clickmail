@@ -121,8 +121,8 @@ export const getServerSideProps: GetServerSideProps = async (context) => {
 	let mailOwnedByUser = false;
 
 	if (loggedIn) {
-		console.log("User is logged in");
-		const profile = await fetchProfile(context.req.cookies.token);
+		// biome-ignore lint/style/noNonNullAssertion: Checked in line 119.
+		const profile = await fetchProfile(context.req.cookies.token!);
 		if (!profile) {
 			return {
 				redirect: {

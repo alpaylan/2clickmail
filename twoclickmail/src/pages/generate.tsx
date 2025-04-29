@@ -1,5 +1,6 @@
 // React Imports
-import React, { useState, FormEvent, ChangeEvent } from "react";
+import type React from "react";
+import { useState, type FormEvent, type ChangeEvent } from "react"
 
 // Next Imports
 import { useRouter } from 'next/router';
@@ -19,7 +20,7 @@ import * as EmailValidator from "email-validator";
 
 // Local Imports
 import { postMail } from "@/lib/requests/data";
-import { EmailData, EmailPostRequest, EmailGenerateRequest, EmailUpdateRequest } from "@/lib/types";
+import type { EmailData, EmailPostRequest, EmailGenerateRequest, EmailUpdateRequest } from "@/lib/types";
 
 // Local Components
 import Layout from "@/components/layout";
@@ -63,7 +64,7 @@ const MailBox = ({ name, emails, setEmails, input, setInput }: MailBoxProps) => 
         setEmails(value);
 
         if (invalidValues.length > 0) {
-          alert("Invalid email(s) found: " + invalidValues.join(", "));
+          alert(`Invalid email(s) found: ${invalidValues.join(", ")}`);
           setInput(invalidValues.join(", "));
         }
 
@@ -156,7 +157,7 @@ export const MailEditForm = ({ emailData = { to: [], cc: [], bcc: [], subject: '
       setToInput(toInvalidMails.join(", "));
 
       if (toInvalidMails.length > 0) {
-        setToErrorMessage("Invalid email(s) found: " + toInvalidMails.join(", "));
+        setToErrorMessage(`Invalid email(s) found: ${toInvalidMails.join(", ")}`);
         valid = false;
       } else {
         setToErrorMessage("");
@@ -189,7 +190,7 @@ export const MailEditForm = ({ emailData = { to: [], cc: [], bcc: [], subject: '
       setCcInput(ccInvalidMails.join(", "));
 
       if (ccInvalidMails.length > 0) {
-        setCcErrorMessage("Invalid email(s) found: " + ccInvalidMails.join(", "));
+        setCcErrorMessage(`Invalid email(s) found: ${ccInvalidMails.join(", ")}`);
         valid = false;
       } else {
         setCcErrorMessage("");
@@ -205,7 +206,7 @@ export const MailEditForm = ({ emailData = { to: [], cc: [], bcc: [], subject: '
       setBccInput(bccInvalidMails.join(", "));
 
       if (bccInvalidMails.length > 0) {
-        setBccErrorMessage("Invalid email(s) found: " + bccInvalidMails.join(", "));
+        setBccErrorMessage(`Invalid email(s) found: ${bccInvalidMails.join(", ")}`);
         valid = false;
       } else {
         setBccErrorMessage("");

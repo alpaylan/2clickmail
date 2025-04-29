@@ -21,9 +21,7 @@ import LaunchIcon from "@mui/icons-material/Launch";
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
 
 export const getServerSideProps: GetServerSideProps = (async (context) => {
-	const { req, res } = context;
-	const { cookies } = req;
-	const { token } = cookies;
+	const { token } = context.req.cookies;
 
 	if (!token) {
 		return {

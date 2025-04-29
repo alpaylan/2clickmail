@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import type React from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/router';
 import { Container, TextField, Button, Typography, Box, Alert } from '@mui/material';
 import { registerUser } from '@/lib/requests/auth';
@@ -13,7 +14,7 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const success = await registerUser(email, password);
-    console.log(success);
+
     if (success) {
       router.push(
         {
@@ -23,7 +24,6 @@ const Login: React.FC = () => {
     } else {
       setErrorMessage('Failed to register');
     }
-
   };
 
   return (
