@@ -93,7 +93,7 @@ const Profile: React.FC = (
 										<TableCell>{mail.data.subject}</TableCell>
 										<TableCell>{mail.count}</TableCell>
 										<TableCell>
-											<Link href={`/email?value=${mail.id}`}>
+											<Link href={`/email/${mail.id}`}>
 												<LaunchIcon />
 											</Link>
 										</TableCell>
