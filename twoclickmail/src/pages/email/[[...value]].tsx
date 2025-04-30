@@ -36,6 +36,7 @@ import { generateMailto } from "@/lib/common";
 import Layout from "@/components/layout";
 import { ShareButtonGroup } from "@/components/ShareButton";
 import { MailChip } from "@/components/MailChip";
+import Head from "next/head";
 
 export type EmailMetadata = {
 	value: string;
@@ -87,12 +88,17 @@ const OutlinedTextDisplay = ({
 };
 
 export const getServerSideProps: GetServerSideProps = async (context) => {
-	const { direct, value: query_value } = context.query as { direct?: string; value?: string };
-    console.log(`context: ${JSON.stringify(context.params)}`);
+	const { direct, value: query_value } = context.query as {
+		direct?: string;
+		value?: string;
+	};
+	console.log(`context: ${JSON.stringify(context.params)}`);
 	const { value: params_value } = context.params ?? { value: undefined };
 
 	const value = (params_value ? params_value[0] : undefined) || query_value;
-	console.log(`query_value: ${query_value}, params_value: ${params_value}, value: ${value}`);
+	console.log(
+		`query_value: ${query_value}, params_value: ${params_value}, value: ${value}`,
+	);
 	const emailObject = await fetchEmail({ value: value } as EmailGetRequest);
 	if (!emailObject) {
 		return {
@@ -234,138 +240,159 @@ const MailViewer = ({
 		}
 	};
 	return (
-		<Container maxWidth="lg">
-			<Box sx={{ my: 4 }}>
-				<Paper style={{ padding: "20px" }}>
-					<Grid container spacing={2}>
-						<Grid item xs={12} sm={6} md={2}>
-							<List>
-								<ListItem disablePadding>
-									<ListItemButton
-										onClick={() => setSelectedEmailGroup(EmailGroup.to)}
-									>
-										<ListItemIcon>
-											{selectedEmailGroup === EmailGroup.to ? (
-												<DraftIcon />
-											) : (
-												<MailIcon />
-											)}
-										</ListItemIcon>
-										<ListItemText primary="To" />
-									</ListItemButton>
-								</ListItem>
-								<ListItem disablePadding>
-									<ListItemButton
-										disabled={emailData.cc.length === 0}
-										onClick={() => setSelectedEmailGroup(EmailGroup.cc)}
-									>
-										<ListItemIcon>
-											{selectedEmailGroup === EmailGroup.cc ? (
-												<DraftIcon />
-											) : (
-												<MailIcon />
-											)}
-										</ListItemIcon>
-										<ListItemText primary="Cc" />
-									</ListItemButton>
-								</ListItem>
-								<ListItem disablePadding>
-									<ListItemButton
-										disabled={emailData.bcc.length === 0}
-										onClick={() => setSelectedEmailGroup(EmailGroup.bcc)}
-									>
-										<ListItemIcon>
-											{selectedEmailGroup === EmailGroup.bcc ? (
-												<DraftIcon />
-											) : (
-												<MailIcon />
-											)}
-										</ListItemIcon>
-										<ListItemText primary="Bcc" />
-									</ListItemButton>
-								</ListItem>
-							</List>
-						</Grid>
-						<Grid item xs={12} sm={6} md={4}>
-							<MailChip
-								mailState={emailGroups[selectedEmailGroup]}
-								editMode={editMode}
-								key={selectedEmailGroup}
-							/>
-						</Grid>
-						<Grid item xs={12} sm={6} md={5}>
-							<Grid container spacing={2} rowSpacing={2}>
-								<Grid item xs={12} sm={12}>
-									<OutlinedTextDisplay
-										label="Subject"
-										text={subject}
-										setText={setSubject}
-										editMode={editMode}
-									/>
-								</Grid>
-								<Grid item xs={12} sm={12}>
-									<OutlinedTextDisplay
-										label="Body"
-										text={body}
-										setText={setBody}
-										multiline={true}
-										editMode={editMode}
-									/>
+		<>
+			<Head>
+				<title>{emailData.subject}</title>
+				{/* <meta name="description" content={previewText} /> */}
+
+				<meta property="og:title" content={emailData.subject} />
+				{/* <meta property="og:description" content={previewText} />
+				<meta property="og:image" content={imageUrl} /> */}
+				<meta
+					property="og:url"
+					content={`https://2clickmail.com/email/${metadata.value}`}
+				/>
+				<meta property="og:type" content="website" />
+
+				<meta name="twitter:card" content="summary_large_image" />
+				<meta name="twitter:title" content={emailData.subject} />
+				{/* <meta name="twitter:description" content={previewText} /> */}
+				{/* <meta name="twitter:image" content={imageUrl} /> */}
+			</Head>
+
+			<Container maxWidth="lg">
+				<Box sx={{ my: 4 }}>
+					<Paper style={{ padding: "20px" }}>
+						<Grid container spacing={2}>
+							<Grid item xs={12} sm={6} md={2}>
+								<List>
+									<ListItem disablePadding>
+										<ListItemButton
+											onClick={() => setSelectedEmailGroup(EmailGroup.to)}
+										>
+											<ListItemIcon>
+												{selectedEmailGroup === EmailGroup.to ? (
+													<DraftIcon />
+												) : (
+													<MailIcon />
+												)}
+											</ListItemIcon>
+											<ListItemText primary="To" />
+										</ListItemButton>
+									</ListItem>
+									<ListItem disablePadding>
+										<ListItemButton
+											disabled={emailData.cc.length === 0}
+											onClick={() => setSelectedEmailGroup(EmailGroup.cc)}
+										>
+											<ListItemIcon>
+												{selectedEmailGroup === EmailGroup.cc ? (
+													<DraftIcon />
+												) : (
+													<MailIcon />
+												)}
+											</ListItemIcon>
+											<ListItemText primary="Cc" />
+										</ListItemButton>
+									</ListItem>
+									<ListItem disablePadding>
+										<ListItemButton
+											disabled={emailData.bcc.length === 0}
+											onClick={() => setSelectedEmailGroup(EmailGroup.bcc)}
+										>
+											<ListItemIcon>
+												{selectedEmailGroup === EmailGroup.bcc ? (
+													<DraftIcon />
+												) : (
+													<MailIcon />
+												)}
+											</ListItemIcon>
+											<ListItemText primary="Bcc" />
+										</ListItemButton>
+									</ListItem>
+								</List>
+							</Grid>
+							<Grid item xs={12} sm={6} md={4}>
+								<MailChip
+									mailState={emailGroups[selectedEmailGroup]}
+									editMode={editMode}
+									key={selectedEmailGroup}
+								/>
+							</Grid>
+							<Grid item xs={12} sm={6} md={5}>
+								<Grid container spacing={2} rowSpacing={2}>
+									<Grid item xs={12} sm={12}>
+										<OutlinedTextDisplay
+											label="Subject"
+											text={subject}
+											setText={setSubject}
+											editMode={editMode}
+										/>
+									</Grid>
+									<Grid item xs={12} sm={12}>
+										<OutlinedTextDisplay
+											label="Body"
+											text={body}
+											setText={setBody}
+											multiline={true}
+											editMode={editMode}
+										/>
+									</Grid>
 								</Grid>
 							</Grid>
-						</Grid>
-						<Grid item xs={12} sm={6} md={1}>
-							<ShareButtonGroup
-								subject={subject}
-								url={`${process.env.PUBLIC_URL}/email/${metadata.value}`}
-							/>
-						</Grid>
+							<Grid item xs={12} sm={6} md={1}>
+								<ShareButtonGroup
+									subject={subject}
+									url={`${process.env.PUBLIC_URL}/email/${metadata.value}`}
+								/>
+							</Grid>
 
-						<Grid item xs={4} sm={4} md={2}>
-							<Link href={mailto} target="_blank" rel="noopener noreferrer">
-								<Button
-									variant="contained"
-									color="primary"
-									startIcon={<SendIcon />}
-									onClick={() =>
-										postMail({
-											mode: "increment_sent_count",
-											id: metadata.value,
-										} as EmailIncrementSentCountRequest)
-									}
-								>
-									Send
-								</Button>
-							</Link>
+							<Grid item xs={4} sm={4} md={2}>
+								<Link href={mailto} target="_blank" rel="noopener noreferrer">
+									<Button
+										variant="contained"
+										color="primary"
+										startIcon={<SendIcon />}
+										onClick={() =>
+											postMail({
+												mode: "increment_sent_count",
+												id: metadata.value,
+											} as EmailIncrementSentCountRequest)
+										}
+									>
+										Send
+									</Button>
+								</Link>
+							</Grid>
+							<Grid item xs={4} sm={4} md={2}>
+								<ThemeProvider theme={theme}>
+									<Button
+										variant="contained"
+										color={mailOwnedByUser ? "primary" : "secondary"}
+										startIcon={editMode ? <SaveIcon /> : <EditIcon />}
+										onClick={clickEditButton}
+									>
+										{editMode ? "Save" : "Edit"}
+									</Button>
+								</ThemeProvider>
+							</Grid>
+							<Grid item xs={4} sm={4} md={2}>
+								<ThemeProvider theme={theme}>
+									<Button
+										variant="contained"
+										color={loggedIn ? "primary" : "secondary"}
+										startIcon={<ContentCopyIcon />}
+										onClick={handleReuseEmail}
+									>
+										Reuse
+									</Button>
+								</ThemeProvider>
+							</Grid>
 						</Grid>
-						<Grid item xs={4} sm={4} md={2}>
-							<ThemeProvider theme={theme}>
-								<Button
-									variant="contained"
-									color={mailOwnedByUser ? "primary" : "secondary"}
-									startIcon={editMode ? <SaveIcon /> : <EditIcon />}
-									onClick={clickEditButton}
-								>
-									{editMode ? "Save" : "Edit"}
-								</Button>
-							</ThemeProvider>
-						</Grid>
-						<Grid item xs={4} sm={4} md={2}>
-							<ThemeProvider theme={theme}>
-								<Button
-									variant="contained"
-									color={loggedIn ? "primary" : "secondary"}
-									startIcon={<ContentCopyIcon />}
-									onClick={handleReuseEmail}
-								>
-									Reuse
-								</Button>
-							</ThemeProvider>
-						</Grid>
-					</Grid>
-				</Paper>
-			</Box>
-		</Container>
+					</Paper>
+				</Box>
+			</Container>
+		</>
 	);
 };
 

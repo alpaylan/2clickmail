@@ -35,6 +35,7 @@ export const getServerSideProps: GetServerSideProps = (async (context) => {
 	const profile = await fetchProfile(token);
 
 	if (!profile) {
+		context.res.setHeader('Set-Cookie', 'token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:00 GMT');
 		return {
 			redirect: {
 				destination: "/login",

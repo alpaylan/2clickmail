@@ -4,11 +4,19 @@ pub mod auth;
 pub mod models;
 pub mod routes;
 
+pub static IS_DEV : LazyLock<bool> = LazyLock::new(|| {
+    std::env::args().any(|arg| arg == "--dev")
+});
+
 pub static SECRET_KEY: LazyLock<String> = LazyLock::new(|| {
     std::env::var("SECRET_KEY").unwrap_or_else(|_| panic!("SECRET_KEY must be set"))
 });
 pub static MONGO_URL: LazyLock<String> = LazyLock::new(|| {
-    std::env::var("MONGO_URL").unwrap_or_else(|_| panic!("SECRET_KEY must be set"))
+    if IS_DEV.clone() {
+        std::env::var("DEV_MONGO_URL").unwrap_or_else(|_| panic!("SECRET_KEY must be set"))
+    } else {
+        std::env::var("MONGO_URL").unwrap_or_else(|_| panic!("SECRET_KEY must be set"))
+    }
 });
 
 pub static USER_SEED: LazyLock<String> = LazyLock::new(|| {
