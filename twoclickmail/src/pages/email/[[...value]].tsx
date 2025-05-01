@@ -1,5 +1,5 @@
 // React Imports
-import React from "react";
+import React, { use, useEffect } from "react";
 
 // Next Imports
 import type { GetServerSideProps, InferGetServerSidePropsType } from "next";
@@ -185,6 +185,19 @@ const MailViewer = ({
 	const [bcc, setBcc] = React.useState(emailData.bcc);
 	const [subject, setSubject] = React.useState(emailData.subject);
 	const [body, setBody] = React.useState(emailData.body);
+	const [previewText, setPreviewText] = React.useState(
+		emailData.body.length > 100
+			? `${emailData.body.substring(0, 100)}...`
+			: emailData.body,
+	);
+
+	useEffect(() => {
+		if (emailData.body.length > 100) {
+			setPreviewText(`${emailData.body.substring(0, 100)}...`);
+		} else {
+			setPreviewText(emailData.body);
+		}
+	}, [emailData.body]);
 
 	const emailGroups = {
 		[EmailGroup.to]: { mails: to ? to : emailData.to, setMails: setTo },
@@ -246,8 +259,13 @@ const MailViewer = ({
 				{/* <meta name="description" content={previewText} /> */}
 
 				<meta property="og:title" content={emailData.subject} />
-				{/* <meta property="og:description" content={previewText} />
-				<meta property="og:image" content={imageUrl} /> */}
+				<meta property="og:description" content={previewText} />
+				<meta
+					property="og:image"
+					content={`https://2clickmail.com/api/og/email?subject=${encodeURIComponent(
+						emailData.subject,
+					)}&preview=${encodeURIComponent(previewText)}`}
+				/>
 				<meta
 					property="og:url"
 					content={`https://2clickmail.com/email/${metadata.value}`}
@@ -256,7 +274,7 @@ const MailViewer = ({
 
 				<meta name="twitter:card" content="summary_large_image" />
 				<meta name="twitter:title" content={emailData.subject} />
-				{/* <meta name="twitter:description" content={previewText} /> */}
+				<meta name="twitter:description" content={previewText} />
 				{/* <meta name="twitter:image" content={imageUrl} /> */}
 			</Head>
 
