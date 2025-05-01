@@ -6,7 +6,7 @@ export const config = {
 	runtime: "edge", // required for @vercel/og
 };
 
-export async function GET(req: NextRequest) {
+export default async function GET(req: NextRequest) {
 	const { searchParams } = new URL(req.url);
 	const subject = searchParams.get("subject") || "Untitled Email";
 	const preview = searchParams.get("preview") || "No preview available";
