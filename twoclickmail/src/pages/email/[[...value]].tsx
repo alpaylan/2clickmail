@@ -262,13 +262,13 @@ const MailViewer = ({
 				<meta property="og:description" content={previewText} />
 				<meta
 					property="og:image"
-					content={`https://2clickmail.com/api/og/email?subject=${encodeURIComponent(
+					content={`${process.env.PUBLIC_URL}/api/og/email?subject=${encodeURIComponent(
 						emailData.subject,
 					)}&preview=${encodeURIComponent(previewText)}`}
 				/>
 				<meta
 					property="og:url"
-					content={`https://2clickmail.com/email/${metadata.value}`}
+					content={`${process.env.PUBLIC_URL}/email/${metadata.value}`}
 				/>
 				<meta property="og:type" content="website" />
 
