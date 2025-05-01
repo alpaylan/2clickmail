@@ -55,6 +55,11 @@ async fn main() {
 
     // check if this is dev
     let mut is_dev = false;
+    if std::env::args().len() < 2 {
+        println!("Usage: {} [--dev | --prod]", std::env::args().nth(0).unwrap());
+        return;
+    }
+
     for arg in std::env::args() {
         if arg == "--dev" {
             is_dev = true;
