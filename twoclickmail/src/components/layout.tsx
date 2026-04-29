@@ -405,7 +405,7 @@ const Layout = ({ children, showSearch = true }: LayoutProps) => {
             <Box
               sx={{
                 backgroundColor: "var(--gmail-surface)",
-                borderRadius: 4,
+                borderRadius: "16px",
                 minHeight: `calc(100vh - ${HEADER_HEIGHT + 24}px)`,
                 overflow: "hidden",
               }}

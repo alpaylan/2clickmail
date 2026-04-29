@@ -67,7 +67,7 @@ const Login: React.FC = () => {
 						maxWidth: 448,
 						p: { xs: 3, md: 6 },
 						border: "1px solid var(--gmail-border)",
-						borderRadius: 4,
+						borderRadius: "8px",
 					}}
 				>
 					<Box
