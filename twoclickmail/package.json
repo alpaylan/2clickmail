@@ -28,7 +28,7 @@
     "eslint-config-next": "^15.3.1",
     "js-cookie": "^3.0.1",
     "material-ui-chip-input": "^1.1.0",
-    "next": "^15.3.1",
+    "next": "15.3.8",
     "react": "^19.1.0",
     "react-chip-input": "^1.1.0",
     "react-dom": "^19.1.0",
